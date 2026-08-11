@@ -1,0 +1,32 @@
+[
+    {
+        "Title": "Ship a small C# application",
+        "IsComplete": false,
+        "XP": 50,
+        "SkillTags": ["C#", "Debugging"]
+    },
+    {
+        "Title": "Create a professional README",
+        "IsComplete": false,
+        "XP": 30,
+        "SkillTags": ["C#", "Debugging"]
+    },
+    {
+        "Title": "Write your first unit test",
+        "IsComplete": false,
+        "XP": 25,
+        "SkillTags": ["C#", "Debugging"]
+    },
+    {
+        "Title": "Refactor a method for clarity",
+        "IsComplete": false,
+        "XP": 20,
+        "SkillTags": ["C#", "Debugging"]
+    },
+    {
+        "Title": "Test questDefinitons by adding a new quest and deleting quests.json.",
+        "IsComplete": false,
+        "XP": 80,
+        "SkillTags": ["C#", "Debugging"]
+    }
+]
