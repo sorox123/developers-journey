@@ -4,6 +4,9 @@ using System.IO;
 SaveData saveData = LoadGame();
 List<Quest> quests = saveData.Quests;
 int totalXP = saveData.TotalXP;
+List<DailyQuest> dailyQuests = saveData.DailyQuests;
+DateTime lastDailyReset = saveData.LastDailyReset;
+
 static SaveData LoadFromDefinitions()
 {
     try
@@ -20,6 +23,24 @@ static SaveData LoadFromDefinitions()
     {
         Console.WriteLine("Fatal error: could not load quest definitions.");
         Console.WriteLine(ex.Message);
+        Environment.Exit(1);
+        return null;
+    }
+}
+
+static List<DailyQuest> LoadDailyQuestFromDefinitions()
+{
+    try
+    {
+        string dailyQuestDefinitions = File.ReadAllText("dailyquestdefinitions.json");
+        List<DailyQuest> dailyQuests = JsonSerializer.Deserialize<List<DailyQuest>>(dailyQuestDefinitions);
+
+        return dailyQuests;
+    }
+    catch (Exception Dex)
+    {
+        Console.WriteLine("Fatal error: could not load daily quest definitions");
+        Console.WriteLine(Dex.Message);
         Environment.Exit(1);
         return null;
     }
@@ -69,7 +90,7 @@ while (keepPlaying)
     keepPlaying = (again == "yes");
 }
 
-SaveGame(quests, totalXP);
+SaveGame(quests, totalXP, dailyQuests, lastDailyReset);
 
 static SaveData LoadGame()
 {
@@ -79,6 +100,10 @@ static SaveData LoadGame()
         {
             string json = File.ReadAllText("quests.json");
             SaveData save = JsonSerializer.Deserialize<SaveData>(json);
+            if (save.DailyQuests == null)
+            {
+                save.DailyQuests = LoadDailyQuestFromDefinitions();
+            }
             return save;
         }
         catch (Exception ex)
@@ -92,9 +117,11 @@ static SaveData LoadGame()
     }
 }
 
-static void SaveGame(List<Quest> quests, int totalXP)
+static void SaveGame(List<Quest> quests, int totalXP, List<DailyQuest> dailyQuests, DateTime lastDailyReset)
 {
     SaveData saveOut = new SaveData();
+    saveOut.LastDailyReset = lastDailyReset;
+    saveOut.DailyQuests = dailyQuests;
     saveOut.Quests = quests;
     saveOut.TotalXP = totalXP;
 
@@ -117,8 +144,16 @@ class Quest
     }
 }
 
+class DailyQuest : Quest
+{
+    public int Progress { get; set; } // progress "how many pushes to github today"
+    public int Goal { get; set; } // goal "out of this many pushes to github"
+}
+
 class SaveData
 {
     public List<Quest> Quests { get; set; }
+    public List<DailyQuest> DailyQuests { get; set; }
     public int TotalXP { get; set; }
+    public DateTime LastDailyReset { get; set; }
 }
