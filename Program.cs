@@ -6,6 +6,17 @@ List<Quest> quests = saveData.Quests;
 int totalXP = saveData.TotalXP;
 List<DailyQuest> dailyQuests = saveData.DailyQuests;
 DateTime lastDailyReset = saveData.LastDailyReset;
+DateTime resetTime = DateTime.Today.AddHours(2);
+
+if (lastDailyReset < resetTime)
+{
+    for (int i = 0; i < dailyQuests.Count; i++)
+    {
+        dailyQuests[i].IsComplete = false;
+        dailyQuests[i].Progress = 0;
+    }
+    lastDailyReset = DateTime.Now;
+}
 
 static SaveData LoadFromDefinitions()
 {
