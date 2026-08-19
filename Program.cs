@@ -74,6 +74,15 @@ while (keepPlaying)
         string tags = string.Join(", ", quests[i].SkillTags);
         Console.WriteLine((i + 1) + ". " + quests[i].Title + " - Complete: " + quests[i].IsComplete + " [" + tags + "]");
     }
+
+    Console.WriteLine("Daily Quests:");
+
+    //Iterate through dailyQuests and print them AFTER regular quests
+    for (int i = 0; i < dailyQuests.Count; i++)
+    {
+        Console.WriteLine((i + 6) + ". " + dailyQuests[i].Title + " - Progress: " + dailyQuests[i].Progress + "/" + dailyQuests[i].Goal);
+    }
+
     Console.WriteLine("Which quest number did you complete?");
     string input = Console.ReadLine();
 
