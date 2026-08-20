@@ -28,6 +28,8 @@ static SaveData LoadFromDefinitions()
         SaveData questsList = new SaveData();
         questsList.Quests = quests;
         questsList.TotalXP = 0;
+        questsList.DailyQuests = LoadDailyQuestFromDefinitions();
+        questsList.LastDailyReset = DateTime.Now;
         return questsList;
     }
     catch (Exception ex)
@@ -80,7 +82,7 @@ while (keepPlaying)
     //Iterate through dailyQuests and print them AFTER regular quests
     for (int i = 0; i < dailyQuests.Count; i++)
     {
-        Console.WriteLine((i + 6) + ". " + dailyQuests[i].Title + " - Progress: " + dailyQuests[i].Progress + "/" + dailyQuests[i].Goal);
+        Console.WriteLine((i + 1) + ". " + dailyQuests[i].Title + " - Progress: " + dailyQuests[i].Progress + "/" + dailyQuests[i].Goal);
     }
 
     Console.WriteLine("Which quest number did you complete?");
@@ -88,16 +90,33 @@ while (keepPlaying)
 
     try
     {
-        int chosenNumber = int.Parse(input);
-        Quest chosenQuest = quests[chosenNumber - 1];
-        if (chosenQuest.IsComplete)
+        if (input.StartsWith("daily"))
         {
-            Console.WriteLine("Quest is already completed.");
-            continue;
+            int chosenDaily = int.Parse(input.Substring(6));
+            DailyQuest dailyProgression = dailyQuests[chosenDaily - 1];
+            dailyProgression.Progress++;
+
+            if (dailyProgression.Progress >= dailyProgression.Goal)
+            {
+                int dailyXP = dailyProgression.Complete();
+                totalXP = totalXP + dailyXP;
+            }
+            
+            Console.WriteLine(dailyProgression.Title + " progress: " + dailyProgression.Progress + " / " + dailyProgression.Goal);
         }
-        int earnedXP = chosenQuest.Complete();
-        totalXP = totalXP + earnedXP;
-        Console.WriteLine("Total XP: " + totalXP);
+        else
+        {
+            int chosenNumber = int.Parse(input);
+            Quest chosenQuest = quests[chosenNumber - 1];
+            if (chosenQuest.IsComplete)
+            {
+                Console.WriteLine("Quest is already completed.");
+                continue;
+            }
+            int earnedXP = chosenQuest.Complete();
+            totalXP = totalXP + earnedXP;
+            Console.WriteLine("Total XP: " + totalXP);
+        }
     }
     catch
     {
@@ -129,6 +148,7 @@ static SaveData LoadGame()
         catch (Exception ex)
         {
             return LoadFromDefinitions();
+            
         }
     }
     else
