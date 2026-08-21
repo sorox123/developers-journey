@@ -8,6 +8,14 @@ List<DailyQuest> dailyQuests = saveData.DailyQuests;
 DateTime lastDailyReset = saveData.LastDailyReset;
 DateTime resetTime = DateTime.Today.AddHours(2);
 
+//deserialize the contents of secrets.json
+static string LoadGitHubToken()
+{
+    string json = File.ReadAllText("secrets.json");
+    Secrets secrets = JsonSerializer.Deserialize<Secrets>(json);
+    return secrets.GitHubToken;
+}
+
 if (lastDailyReset < resetTime)
 {
     for (int i = 0; i < dailyQuests.Count; i++)
@@ -40,6 +48,30 @@ static SaveData LoadFromDefinitions()
         return null;
     }
 }
+
+//sets the deserialized contents to a string
+string gitHubToken = LoadGitHubToken();
+
+//returns "task" string. "task" signifies the result may not be ready yet but to anticipate it as a string
+static async Task<string> GetGitHubPushes(string token)
+{
+    //HttpClient makes web requests
+    HttpClient client = new HttpClient();
+    // identify app and attach token
+    client.DefaultRequestHeaders.Add("Authorization", "Bearer " + token);
+    client.DefaultRequestHeaders.Add("User-Agent", "DevelopersJourney");
+
+    //GetAsync fetches the the repo url. Sicne this takes time, we use await
+    HttpResponseMessage response = await client.GetAsync("https://api.github.com/repos/sorox123/developers-journey/events");
+    //sets the HttpResponseMessage as a string before we return it
+    string result = await response.Content.ReadAsStringAsync();
+
+    return result;
+}
+
+string githubToken = LoadGitHubToken();
+string pushData = await GetGitHubPushes(githubToken);
+Console.WriteLine(pushData);
 
 static List<DailyQuest> LoadDailyQuestFromDefinitions()
 {
@@ -88,12 +120,27 @@ while (keepPlaying)
     Console.WriteLine("Which quest number did you complete?");
     string input = Console.ReadLine();
 
+    // checks if input is "quit" or "exit"
+    if (input == "quit" || input == "exit")
+    {
+        keepPlaying = false;
+        continue;
+    }
+
     try
     {
         if (input.StartsWith("daily"))
         {
             int chosenDaily = int.Parse(input.Substring(6));
             DailyQuest dailyProgression = dailyQuests[chosenDaily - 1];
+
+            //checks to make sure the daily isn't already complete.
+            if (dailyProgression.IsComplete == true)
+            {
+                Console.WriteLine("Daily quest is already completed.");
+                continue;
+            }
+
             dailyProgression.Progress++;
 
             if (dailyProgression.Progress >= dailyProgression.Goal)
@@ -196,4 +243,10 @@ class SaveData
     public List<DailyQuest> DailyQuests { get; set; }
     public int TotalXP { get; set; }
     public DateTime LastDailyReset { get; set; }
+}
+
+//stores tokens here (defined in gitignore)
+class Secrets
+{
+    public string GitHubToken { get; set; }
 }
