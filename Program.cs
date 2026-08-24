@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.IO;
 
 SaveData saveData = LoadGame();
@@ -71,7 +72,17 @@ static async Task<string> GetGitHubPushes(string token)
 
 string githubToken = LoadGitHubToken();
 string pushData = await GetGitHubPushes(githubToken);
-Console.WriteLine(pushData);
+List<GitHubEvent> events = JsonSerializer.Deserialize<List<GitHubEvent>>(pushData);
+int totalPushes = 0;
+
+for (int i = 0; i < events.Count; i++)
+{
+    if (events[i].Type == "PushEvent")
+    {
+        totalPushes++;
+    }
+}
+Console.WriteLine(totalPushes);
 
 static List<DailyQuest> LoadDailyQuestFromDefinitions()
 {
@@ -249,4 +260,10 @@ class SaveData
 class Secrets
 {
     public string GitHubToken { get; set; }
+}
+
+class GitHubEvent
+{
+    [JsonPropertyName("type")]
+    public string Type { get; set; }
 }
