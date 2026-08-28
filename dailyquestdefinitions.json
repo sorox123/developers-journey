@@ -1,6 +1,6 @@
 [
     {
-        "Title": "Make two pushes to GitHub",
+        "Title": "Make 2 pushes to GitHub",
         "IsComplete": false,
         "XP": 25,
         "SkillTags": ["C#", "Version Control"],

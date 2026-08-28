@@ -84,6 +84,23 @@ for (int i = 0; i < events.Count; i++)
 }
 Console.WriteLine(totalPushes);
 
+for (int i = 0; i < dailyQuests.Count; i++)
+{
+    if (!dailyQuests[i].IsComplete) // checks to see if daily hasn't already been completed
+    {
+        if (dailyQuests[i].Title == "Make 2 pushes to GitHub")
+        {
+            dailyQuests[i].Progress = totalPushes;
+            if (dailyQuests[i].Progress >= dailyQuests[i].Goal)
+            {
+                int dailyXP = dailyQuests[i].Complete();
+                totalXP = totalXP + dailyXP;
+            }
+        }
+    }
+}
+
+
 static List<DailyQuest> LoadDailyQuestFromDefinitions()
 {
     try
