@@ -24,7 +24,7 @@ if (lastDailyReset < resetTime)
         dailyQuests[i].IsComplete = false;
         dailyQuests[i].Progress = 0;
     }
-    lastDailyReset = DateTime.Now;
+    lastDailyReset = resetTime;
 }
 
 static SaveData LoadFromDefinitions()
@@ -77,7 +77,7 @@ int totalPushes = 0;
 
 for (int i = 0; i < events.Count; i++)
 {
-    if (events[i].Type == "PushEvent")
+    if (events[i].Type == "PushEvent" && events[i].CreatedAt > lastDailyReset)
     {
         totalPushes++;
     }
@@ -283,4 +283,7 @@ class GitHubEvent
 {
     [JsonPropertyName("type")]
     public string Type { get; set; }
+
+    [JsonPropertyName("created_at")]
+    public DateTime CreatedAt { get; set; }
 }
