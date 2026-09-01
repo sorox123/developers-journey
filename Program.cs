@@ -38,7 +38,7 @@ static SaveData LoadFromDefinitions()
         questsList.Quests = quests;
         questsList.TotalXP = 0;
         questsList.DailyQuests = LoadDailyQuestFromDefinitions();
-        questsList.LastDailyReset = DateTime.Now;
+        questsList.LastDailyReset = DateTime.Today.AddHours(2);
         return questsList;
     }
     catch (Exception ex)
@@ -83,6 +83,11 @@ for (int i = 0; i < events.Count; i++)
     }
 }
 Console.WriteLine(totalPushes);
+
+// debugging logic
+Console.WriteLine("lastDailyReset: " + lastDailyReset);
+Console.WriteLine("Most recent event: " + events[0].CreatedAt);
+Console.WriteLine("totalPushes: " + totalPushes);
 
 for (int i = 0; i < dailyQuests.Count; i++)
 {
