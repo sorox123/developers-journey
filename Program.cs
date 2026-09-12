@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.IO;
+using System.Text;
 
 SaveData saveData = LoadGame();
 List<Quest> quests = saveData.Quests;
@@ -8,13 +9,17 @@ int totalXP = saveData.TotalXP;
 List<DailyQuest> dailyQuests = saveData.DailyQuests;
 DateTime lastDailyReset = saveData.LastDailyReset;
 DateTime resetTime = DateTime.Today.AddHours(2);
+bool githubFetchSuccess = false;
+bool wakaFetchSuccess = false;
+Dictionary<string, ProjectStats> projectStats = new Dictionary<string , ProjectStats>();
+
 
 //deserialize the contents of secrets.json
-static string LoadGitHubToken()
+static Secrets LoadSecrets()
 {
     string json = File.ReadAllText("secrets.json");
     Secrets secrets = JsonSerializer.Deserialize<Secrets>(json);
-    return secrets.GitHubToken;
+    return secrets;
 }
 
 if (lastDailyReset < resetTime)
@@ -50,9 +55,6 @@ static SaveData LoadFromDefinitions()
     }
 }
 
-//sets the deserialized contents to a string
-string gitHubToken = LoadGitHubToken();
-
 //returns "task" string. "task" signifies the result may not be ready yet but to anticipate it as a string
 static async Task<string> GetGitHubPushes(string token)
 {
@@ -63,31 +65,94 @@ static async Task<string> GetGitHubPushes(string token)
     client.DefaultRequestHeaders.Add("User-Agent", "DevelopersJourney");
 
     //GetAsync fetches the the repo url. Sicne this takes time, we use await
-    HttpResponseMessage response = await client.GetAsync("https://api.github.com/repos/sorox123/developers-journey/events");
+    HttpResponseMessage response = await client.GetAsync("https://api.github.com/users/sorox123/events");
     //sets the HttpResponseMessage as a string before we return it
     string result = await response.Content.ReadAsStringAsync();
 
     return result;
 }
 
-string githubToken = LoadGitHubToken();
-string pushData = await GetGitHubPushes(githubToken);
-List<GitHubEvent> events = JsonSerializer.Deserialize<List<GitHubEvent>>(pushData);
+static async Task<string> GetWakaTimeData(string token)
+{
+    HttpClient client = new HttpClient();
+
+    // turns API key string into raw bytes since Base64 works on bytes, not strings.
+    string encodedToken = Convert.ToBase64String(Encoding.ASCII.GetBytes(token));
+    // converts the raw bytes into a string that can be used in the header. The "Basic" part is required by WakaTime API.
+    client.DefaultRequestHeaders.Add("Authorization", "Basic " + encodedToken);
+
+    client.DefaultRequestHeaders.Add("User-Agent", "DevelopersJourney");
+    //fetches time use for today on this particular project.
+    HttpResponseMessage response = await client.GetAsync("https://wakatime.com/api/v1/users/current/summaries?start=today&end=today");
+    string result = await response.Content.ReadAsStringAsync();
+
+    return result;
+}
+
+
+string githubToken = LoadSecrets().GitHubToken;
+string pushData = "";
 int totalPushes = 0;
 
-for (int i = 0; i < events.Count; i++)
+try
 {
-    if (events[i].Type == "PushEvent" && events[i].CreatedAt > lastDailyReset)
+    pushData = await GetGitHubPushes(githubToken);
+    githubFetchSuccess = true;
+}
+catch
+{
+    Console.WriteLine("Couldn't reach GitHub. Check internet connection and try again.");
+    githubFetchSuccess = false;
+}
+
+float hoursWorked = 0;
+
+if (githubFetchSuccess) 
+{
+    List<GitHubEvent> events = JsonSerializer.Deserialize<List<GitHubEvent>>(pushData);
+    for (int i = 0; i < events.Count; i++)
     {
-        totalPushes++;
+        if (events[i].Type == "PushEvent" && events[i].CreatedAt > lastDailyReset)
+        {
+            totalPushes++;
+
+            // pulls and saves repo name from current event
+            string projectName = events[i].Repo.Name;
+
+            // if the project name doesn't exist in dict, appends it as a new ProjectStats object
+            if (!projectStats.ContainsKey(projectName))
+            {
+                projectStats[projectName] = new ProjectStats();
+            }
+
+            // increments the number of pushes for that project
+            projectStats[projectName].ProjectPushes++;
+        }
     }
 }
-Console.WriteLine(totalPushes);
 
-// debugging logic
-Console.WriteLine("lastDailyReset: " + lastDailyReset);
-Console.WriteLine("Most recent event: " + events[0].CreatedAt);
-Console.WriteLine("totalPushes: " + totalPushes);
+
+string wakaTimeToken = LoadSecrets().WakaTimeToken;
+string wakaTimeData = "";
+
+try
+{
+    wakaTimeData = await GetWakaTimeData(wakaTimeToken);
+    wakaFetchSuccess = true;
+}
+catch
+{
+    Console.WriteLine("Couldn't reach WakaTime. Check internet connection and try again.");
+    wakaFetchSuccess = false;
+}
+
+if (wakaFetchSuccess)
+{
+
+    WakaTimeData wakaTimeResponse = JsonSerializer.Deserialize<WakaTimeData>(wakaTimeData);
+    float totalTimeWorked = wakaTimeResponse.Data[0].GrandTotal.TotalSeconds;
+    hoursWorked = totalTimeWorked / 3600;
+}
 
 for (int i = 0; i < dailyQuests.Count; i++)
 {
@@ -96,6 +161,15 @@ for (int i = 0; i < dailyQuests.Count; i++)
         if (dailyQuests[i].Title == "Make 2 pushes to GitHub")
         {
             dailyQuests[i].Progress = totalPushes;
+            if (dailyQuests[i].Progress >= dailyQuests[i].Goal)
+            {
+                int dailyXP = dailyQuests[i].Complete();
+                totalXP = totalXP + dailyXP;
+            }
+        }
+        if (dailyQuests[i].Title == "Actively code in VSCode for 5 hours")
+        {
+            dailyQuests[i].Progress = (int)hoursWorked;
             if (dailyQuests[i].Progress >= dailyQuests[i].Goal)
             {
                 int dailyXP = dailyQuests[i].Complete();
@@ -209,7 +283,15 @@ while (keepPlaying)
     keepPlaying = (again == "yes");
 }
 
-SaveGame(quests, totalXP, dailyQuests, lastDailyReset);
+try
+{
+    SaveGame(quests, totalXP, dailyQuests, lastDailyReset);
+    Console.WriteLine("Game saved successfully.");
+}
+catch (Exception ex)
+{
+    Console.WriteLine("Error saving game: " + ex.Message);
+}
 
 static SaveData LoadGame()
 {
@@ -282,8 +364,17 @@ class SaveData
 class Secrets
 {
     public string GitHubToken { get; set; }
+    public string WakaTimeToken { get; set; }
 }
 
+// parses the name field of the json response
+class GitHubRepo
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
+}
+
+// parses json response from api
 class GitHubEvent
 {
     [JsonPropertyName("type")]
@@ -291,4 +382,31 @@ class GitHubEvent
 
     [JsonPropertyName("created_at")]
     public DateTime CreatedAt { get; set; }
+
+    [JsonPropertyName("repo")]
+    public GitHubRepo Repo { get; set; }
+}
+
+class WakaTimeData
+{
+    [JsonPropertyName("data")]
+    public List<WakaTimeGrandTotal> Data { get; set; }
+}
+
+class WakaTimeGrandTotal
+{
+    [JsonPropertyName("grand_total")]
+    public WakaTimeTotalSeconds GrandTotal { get; set; }
+}
+
+class WakaTimeTotalSeconds
+{
+    [JsonPropertyName("total_seconds")]
+    public float TotalSeconds { get; set; }
+}
+
+class ProjectStats
+{
+    public int ProjectPushes { get; set; }
+    public float ProjectHours { get; set; }
 }
