@@ -13,7 +13,6 @@ bool githubFetchSuccess = false;
 bool wakaFetchSuccess = false;
 Dictionary<string, ProjectStats> projectStats = new Dictionary<string , ProjectStats>();
 
-
 //deserialize the contents of secrets.json
 static Secrets LoadSecrets()
 {
@@ -148,10 +147,22 @@ catch
 
 if (wakaFetchSuccess)
 {
-
     WakaTimeData wakaTimeResponse = JsonSerializer.Deserialize<WakaTimeData>(wakaTimeData);
     float totalTimeWorked = wakaTimeResponse.Data[0].GrandTotal.TotalSeconds;
     hoursWorked = totalTimeWorked / 3600;
+
+    for (int i =0; i < wakaTimeResponse.Data[0].Projects.Count; i++)
+    {
+        string projectName = wakaTimeResponse.Data[0].Projects[i].Name;
+        float projectTimeWorked = wakaTimeResponse.Data[0].Projects[i].TotalSeconds / 3600;
+
+        if (!projectStats.ContainsKey(projectName))
+        {
+            projectStats[projectName] = new ProjectStats();
+        }
+
+        projectStats[projectName].ProjectHours = projectTimeWorked;
+    }
 }
 
 for (int i = 0; i < dailyQuests.Count; i++)
@@ -397,6 +408,9 @@ class WakaTimeGrandTotal
 {
     [JsonPropertyName("grand_total")]
     public WakaTimeTotalSeconds GrandTotal { get; set; }
+
+    [JsonPropertyName("projects")]
+    public List<WakaTimeProject> Projects { get; set; }
 }
 
 class WakaTimeTotalSeconds
@@ -405,8 +419,41 @@ class WakaTimeTotalSeconds
     public float TotalSeconds { get; set; }
 }
 
+class WakaTimeProject
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
+
+    [JsonPropertyName("total_seconds")]
+    public float TotalSeconds { get; set; }
+}
+
 class ProjectStats
 {
     public int ProjectPushes { get; set; }
     public float ProjectHours { get; set; }
+}
+
+//Intent class, holds data for dynamic quest generation
+enum Intent
+{
+    DailyConsistency,
+    PushVolume,
+    TimeInvestment,
+    PushRegularity,
+    Momentum,
+    CommitMessageQuality,
+    CommitAtomicity
+}
+
+// reads in the meta data for dynamic quest generation
+class IntentState
+{
+    public Intent IntentType { get; set; }
+    public int CurrentGoal { get; set; }
+    public int LastSuccessfulGoal { get; set; }
+    public int StepSize { get; set; }
+    public List<int> RecentHistory { get; set; } = new List<int>();
+    public DateTime LastDailyCheck { get; set; }
+    public DateTime LastWeeklyCheck { get; set; }
 }
