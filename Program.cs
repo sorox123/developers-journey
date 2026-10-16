@@ -1,58 +1,56 @@
 ﻿using DevelopersJourney.Models;
+using DevelopersJourney.Services;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.IO;
 using System.Text;
 
-SaveData saveData = LoadGame();
-List<Quest> quests = saveData.Quests;
-int totalXP = saveData.TotalXP;
-List<DailyQuest> dailyQuests = saveData.DailyQuests;
-DateTime lastDailyReset = saveData.LastDailyReset;
+var storage = new SaveService();
+SaveData saveData;
 DateTime resetTime = DateTime.Today.AddHours(2);
 bool githubFetchSuccess = false;
 bool wakaFetchSuccess = false;
 Dictionary<string, ProjectStats> projectStats = new Dictionary<string , ProjectStats>();
 
+try
+{
+    saveData = storage.LoadGame();
+}
+catch (Exception ex)
+{
+    Console.WriteLine("Error loading game: " + ex.Message);
+    return;
+}
+
+List<Quest> quests = saveData.Quests;
+int totalXP = saveData.TotalXP;
+List<DailyQuest> dailyQuests = saveData.DailyQuests;
+DateTime lastDailyReset = saveData.LastDailyReset;
+
 //deserialize the contents of secrets.json
+try 
+{
+    if (lastDailyReset < resetTime)
+    {
+        for (int i = 0; i < dailyQuests.Count; i++)
+        {
+            dailyQuests[i].IsComplete = false;
+            dailyQuests[i].Progress = 0;
+        }
+        lastDailyReset = resetTime;
+    }
+}
+catch
+{
+    Console.WriteLine("Fatal error: could not load secrets.json. Make sure the file exists and is formatted correctly.");
+    return;
+}
+
 static Secrets LoadSecrets()
 {
     string json = File.ReadAllText("secrets.json");
     Secrets secrets = JsonSerializer.Deserialize<Secrets>(json);
     return secrets;
-}
-
-if (lastDailyReset < resetTime)
-{
-    for (int i = 0; i < dailyQuests.Count; i++)
-    {
-        dailyQuests[i].IsComplete = false;
-        dailyQuests[i].Progress = 0;
-    }
-    lastDailyReset = resetTime;
-}
-
-static SaveData LoadFromDefinitions()
-{
-    try
-    {
-        string questDefinitions = File.ReadAllText("questdefinitions.json");
-        List<Quest> quests = JsonSerializer.Deserialize<List<Quest>>(questDefinitions);
-
-        SaveData questsList = new SaveData();
-        questsList.Quests = quests;
-        questsList.TotalXP = 0;
-        questsList.DailyQuests = LoadDailyQuestFromDefinitions();
-        questsList.LastDailyReset = DateTime.Today.AddHours(2);
-        return questsList;
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine("Fatal error: could not load quest definitions.");
-        Console.WriteLine(ex.Message);
-        Environment.Exit(1);
-        return null;
-    }
 }
 
 //returns "task" string. "task" signifies the result may not be ready yet but to anticipate it as a string
@@ -176,6 +174,7 @@ for (int i = 0; i < dailyQuests.Count; i++)
             if (dailyQuests[i].Progress >= dailyQuests[i].Goal)
             {
                 int dailyXP = dailyQuests[i].Complete();
+                Console.WriteLine(dailyQuests[i].Title + " completed! +" + dailyXP + " XP");
                 totalXP = totalXP + dailyXP;
             }
         }
@@ -185,28 +184,10 @@ for (int i = 0; i < dailyQuests.Count; i++)
             if (dailyQuests[i].Progress >= dailyQuests[i].Goal)
             {
                 int dailyXP = dailyQuests[i].Complete();
+                Console.WriteLine(dailyQuests[i].Title + " completed! +" + dailyXP + " XP");
                 totalXP = totalXP + dailyXP;
             }
         }
-    }
-}
-
-
-static List<DailyQuest> LoadDailyQuestFromDefinitions()
-{
-    try
-    {
-        string dailyQuestDefinitions = File.ReadAllText("dailyquestdefinitions.json");
-        List<DailyQuest> dailyQuests = JsonSerializer.Deserialize<List<DailyQuest>>(dailyQuestDefinitions);
-
-        return dailyQuests;
-    }
-    catch (Exception Dex)
-    {
-        Console.WriteLine("Fatal error: could not load daily quest definitions");
-        Console.WriteLine(Dex.Message);
-        Environment.Exit(1);
-        return null;
     }
 }
 
@@ -265,6 +246,7 @@ while (keepPlaying)
             if (dailyProgression.Progress >= dailyProgression.Goal)
             {
                 int dailyXP = dailyProgression.Complete();
+                Console.WriteLine(dailyProgression.Title + " completed! +" + dailyXP + " XP");
                 totalXP = totalXP + dailyXP;
             }
             
@@ -280,6 +262,7 @@ while (keepPlaying)
                 continue;
             }
             int earnedXP = chosenQuest.Complete();
+            Console.WriteLine(chosenQuest.Title + " completed! +" + earnedXP + " XP");
             totalXP = totalXP + earnedXP;
             Console.WriteLine("Total XP: " + totalXP);
         }
@@ -297,48 +280,10 @@ while (keepPlaying)
 
 try
 {
-    SaveGame(quests, totalXP, dailyQuests, lastDailyReset);
+    storage.SaveGame(quests, totalXP, dailyQuests, lastDailyReset);
     Console.WriteLine("Game saved successfully.");
 }
 catch (Exception ex)
 {
     Console.WriteLine("Error saving game: " + ex.Message);
-}
-
-static SaveData LoadGame()
-{
-    if (File.Exists("quests.json"))
-    {
-        try
-        {
-            string json = File.ReadAllText("quests.json");
-            SaveData save = JsonSerializer.Deserialize<SaveData>(json);
-            if (save.DailyQuests == null)
-            {
-                save.DailyQuests = LoadDailyQuestFromDefinitions();
-            }
-            return save;
-        }
-        catch (Exception ex)
-        {
-            return LoadFromDefinitions();
-            
-        }
-    }
-    else
-    {
-        return LoadFromDefinitions();
-    }
-}
-
-static void SaveGame(List<Quest> quests, int totalXP, List<DailyQuest> dailyQuests, DateTime lastDailyReset)
-{
-    SaveData saveOut = new SaveData();
-    saveOut.LastDailyReset = lastDailyReset;
-    saveOut.DailyQuests = dailyQuests;
-    saveOut.Quests = quests;
-    saveOut.TotalXP = totalXP;
-
-    string data = JsonSerializer.Serialize(saveOut);
-    File.WriteAllText("quests.json", data);
 }

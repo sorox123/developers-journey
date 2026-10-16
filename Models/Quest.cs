@@ -10,7 +10,6 @@ public class Quest
     public int Complete()
     {
         IsComplete = true;
-        Console.WriteLine(Title + " marked complete! +" + XP + " XP");
         return XP;
     }
 }
