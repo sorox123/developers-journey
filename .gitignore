@@ -483,3 +483,6 @@ $RECYCLE.BIN/
 
 # Tokens go here:
 secrets.json
+
+# Quests go here:
+quests.json
