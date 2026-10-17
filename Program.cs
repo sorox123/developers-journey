@@ -6,6 +6,7 @@ using System.IO;
 using System.Text;
 
 var storage = new SaveService();
+ApiService apiService;
 SaveData saveData;
 DateTime resetTime = DateTime.Today.AddHours(2);
 bool githubFetchSuccess = false;
@@ -20,6 +21,38 @@ catch (Exception ex)
 {
     Console.WriteLine("Error loading game: " + ex.Message);
     return;
+}
+
+try //checks for secrets and creates an ApiService object if there is one, returns error if not
+{
+    apiService = new ApiService();
+}
+catch (Exception ex)
+{
+    Console.WriteLine("Error fetching API data: " + ex.Message);
+    return;
+}
+
+string pushData = ""; //init empty string to hold github data
+try
+{
+    pushData = await apiService.GetGitHubPushes();
+    githubFetchSuccess = true;
+}
+catch (Exception ex)
+{
+    Console.WriteLine("Error fetching GitHub data: " + ex.Message);
+}
+
+string wakaTimeData = ""; //init empty string to hold waka data
+try
+{
+    wakaTimeData = await apiService.GetWakaTimeData();
+    wakaFetchSuccess = true;
+}
+catch (Exception ex)
+{
+    Console.WriteLine("Error fetching WakaTime data: " + ex.Message);
 }
 
 List<Quest> quests = saveData.Quests;
@@ -46,62 +79,7 @@ catch
     return;
 }
 
-static Secrets LoadSecrets()
-{
-    string json = File.ReadAllText("secrets.json");
-    Secrets secrets = JsonSerializer.Deserialize<Secrets>(json);
-    return secrets;
-}
-
-//returns "task" string. "task" signifies the result may not be ready yet but to anticipate it as a string
-static async Task<string> GetGitHubPushes(string token)
-{
-    //HttpClient makes web requests
-    HttpClient client = new HttpClient();
-    // identify app and attach token
-    client.DefaultRequestHeaders.Add("Authorization", "Bearer " + token);
-    client.DefaultRequestHeaders.Add("User-Agent", "DevelopersJourney");
-
-    //GetAsync fetches the the repo url. Sicne this takes time, we use await
-    HttpResponseMessage response = await client.GetAsync("https://api.github.com/users/sorox123/events");
-    //sets the HttpResponseMessage as a string before we return it
-    string result = await response.Content.ReadAsStringAsync();
-
-    return result;
-}
-
-static async Task<string> GetWakaTimeData(string token)
-{
-    HttpClient client = new HttpClient();
-
-    // turns API key string into raw bytes since Base64 works on bytes, not strings.
-    string encodedToken = Convert.ToBase64String(Encoding.ASCII.GetBytes(token));
-    // converts the raw bytes into a string that can be used in the header. The "Basic" part is required by WakaTime API.
-    client.DefaultRequestHeaders.Add("Authorization", "Basic " + encodedToken);
-
-    client.DefaultRequestHeaders.Add("User-Agent", "DevelopersJourney");
-    //fetches time use for today on this particular project.
-    HttpResponseMessage response = await client.GetAsync("https://wakatime.com/api/v1/users/current/summaries?start=today&end=today");
-    string result = await response.Content.ReadAsStringAsync();
-
-    return result;
-}
-
-
-string githubToken = LoadSecrets().GitHubToken;
-string pushData = "";
 int totalPushes = 0;
-
-try
-{
-    pushData = await GetGitHubPushes(githubToken);
-    githubFetchSuccess = true;
-}
-catch
-{
-    Console.WriteLine("Couldn't reach GitHub. Check internet connection and try again.");
-    githubFetchSuccess = false;
-}
 
 float hoursWorked = 0;
 
@@ -129,20 +107,6 @@ if (githubFetchSuccess)
     }
 }
 
-
-string wakaTimeToken = LoadSecrets().WakaTimeToken;
-string wakaTimeData = "";
-
-try
-{
-    wakaTimeData = await GetWakaTimeData(wakaTimeToken);
-    wakaFetchSuccess = true;
-}
-catch
-{
-    Console.WriteLine("Couldn't reach WakaTime. Check internet connection and try again.");
-    wakaFetchSuccess = false;
-}
 
 if (wakaFetchSuccess)
 {
