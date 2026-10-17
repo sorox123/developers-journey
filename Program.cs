@@ -8,7 +8,6 @@ using System.Text;
 var storage = new SaveService();
 ApiService apiService;
 SaveData saveData;
-DateTime resetTime = DateTime.Today.AddHours(2);
 bool githubFetchSuccess = false;
 bool wakaFetchSuccess = false;
 Dictionary<string, ProjectStats> projectStats = new Dictionary<string , ProjectStats>();
@@ -23,6 +22,8 @@ catch (Exception ex)
     return;
 }
 
+var game = new GameState(saveData);
+
 try //checks for secrets and creates an ApiService object if there is one, returns error if not
 {
     apiService = new ApiService();
@@ -33,7 +34,7 @@ catch (Exception ex)
     return;
 }
 
-string pushData = ""; //init empty string to hold github data
+List<GitHubEvent> pushData = null; //init null GitHubEvent list to hold pushData
 try
 {
     pushData = await apiService.GetGitHubPushes();
@@ -44,7 +45,7 @@ catch (Exception ex)
     Console.WriteLine("Error fetching GitHub data: " + ex.Message);
 }
 
-string wakaTimeData = ""; //init empty string to hold waka data
+WakaTimeData wakaTimeData = null; //init null WakaTimeData object to hold wakaTimeData
 try
 {
     wakaTimeData = await apiService.GetWakaTimeData();
@@ -60,32 +61,13 @@ int totalXP = saveData.TotalXP;
 List<DailyQuest> dailyQuests = saveData.DailyQuests;
 DateTime lastDailyReset = saveData.LastDailyReset;
 
-//deserialize the contents of secrets.json
-try 
-{
-    if (lastDailyReset < resetTime)
-    {
-        for (int i = 0; i < dailyQuests.Count; i++)
-        {
-            dailyQuests[i].IsComplete = false;
-            dailyQuests[i].Progress = 0;
-        }
-        lastDailyReset = resetTime;
-    }
-}
-catch
-{
-    Console.WriteLine("Fatal error: could not load secrets.json. Make sure the file exists and is formatted correctly.");
-    return;
-}
-
 int totalPushes = 0;
 
 float hoursWorked = 0;
 
 if (githubFetchSuccess) 
 {
-    List<GitHubEvent> events = JsonSerializer.Deserialize<List<GitHubEvent>>(pushData);
+    List<GitHubEvent> events = pushData;
     for (int i = 0; i < events.Count; i++)
     {
         if (events[i].Type == "PushEvent" && events[i].CreatedAt > lastDailyReset)
@@ -110,7 +92,7 @@ if (githubFetchSuccess)
 
 if (wakaFetchSuccess)
 {
-    WakaTimeData wakaTimeResponse = JsonSerializer.Deserialize<WakaTimeData>(wakaTimeData);
+    WakaTimeData wakaTimeResponse = wakaTimeData;
     float totalTimeWorked = wakaTimeResponse.Data[0].GrandTotal.TotalSeconds;
     hoursWorked = totalTimeWorked / 3600;
 
