@@ -21,15 +21,15 @@ public class GameState
 
     public void CheckForReset()
     {
-        DateTime now = DateTime.Now;
-        DateTime resetTime = DateTime.Today.AddHours(2);
+        DateTime now = DateTime.Now; //gets current time
+        DateTime resetTime = DateTime.Today.AddHours(2); //keeps reset time as 2am on the current day
 
-        if (now < resetTime)
+        if (now < resetTime) //if now is less than reset time, reset time was a day prior
         {
-            resetTime = now.AddDays(-1);
+            resetTime = resetTime.AddDays(-1);
         }
 
-        if (LastDailyReset < resetTime)
+        if (LastDailyReset < resetTime) //if lastdailyreset is less than resettime, reset everything
         {
             for (int i = 0; i < DailyQuests.Count; i++)
             {
@@ -38,5 +38,51 @@ public class GameState
             }
             LastDailyReset = resetTime;
         }
+    }
+
+    public int CountPushes(List<GitHubEvent> events)
+    {
+        int totalPushes = 0; //sets pushes to 0 to start
+
+        for (int i = 0; i < events.Count; i++) //for every event in the events list, look for Pushevent and count every one
+        {
+            if (events[i].Type == "PushEvent" && events[i].CreatedAt > LastDailyReset)
+            {
+                totalPushes++;
+
+                // pulls and saves repo name from current event, assigning it to projectName
+                string projectName = events[i].Repo.Name;
+
+                // if the project name doesn't exist in dict, appends it as a new ProjectStats object
+                if (!Projects.ContainsKey(projectName))
+                {
+                    Projects[projectName] = new ProjectStats();
+                }
+
+                // increments the number of pushes for that project
+                Projects[projectName].ProjectPushes++;
+            }
+        }
+        return totalPushes;
+    }
+
+    public float GetHoursWorked(WakaTimeData wakaData)
+    {
+        float totalTimeWorked = wakaData.Data[0].GrandTotal.TotalSeconds;
+        float hoursWorked = totalTimeWorked / 3600;
+
+        for (int i =0; i < wakaData.Data[0].Projects.Count; i++)
+        {
+            string projectName = wakaData.Data[0].Projects[i].Name;
+            float projectTimeWorked = wakaData.Data[0].Projects[i].TotalSeconds / 3600;
+
+            if (!Projects.ContainsKey(projectName))
+            {
+                Projects[projectName] = new ProjectStats();
+            }
+
+            Projects[projectName].ProjectHours = projectTimeWorked;
+        }
+        return hoursWorked;
     }
 }

@@ -1,16 +1,11 @@
 ﻿using DevelopersJourney.Models;
 using DevelopersJourney.Services;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.IO;
-using System.Text;
 
 var storage = new SaveService();
 ApiService apiService;
 SaveData saveData;
 bool githubFetchSuccess = false;
 bool wakaFetchSuccess = false;
-Dictionary<string, ProjectStats> projectStats = new Dictionary<string , ProjectStats>();
 
 try
 {
@@ -56,10 +51,12 @@ catch (Exception ex)
     Console.WriteLine("Error fetching WakaTime data: " + ex.Message);
 }
 
-List<Quest> quests = saveData.Quests;
-int totalXP = saveData.TotalXP;
-List<DailyQuest> dailyQuests = saveData.DailyQuests;
-DateTime lastDailyReset = saveData.LastDailyReset;
+game.CheckForReset();
+
+List<Quest> quests = game.Quests;
+int totalXP = game.TotalXP;
+List<DailyQuest> dailyQuests = game.DailyQuests;
+DateTime lastDailyReset = game.LastDailyReset;
 
 int totalPushes = 0;
 
@@ -67,47 +64,13 @@ float hoursWorked = 0;
 
 if (githubFetchSuccess) 
 {
-    List<GitHubEvent> events = pushData;
-    for (int i = 0; i < events.Count; i++)
-    {
-        if (events[i].Type == "PushEvent" && events[i].CreatedAt > lastDailyReset)
-        {
-            totalPushes++;
-
-            // pulls and saves repo name from current event
-            string projectName = events[i].Repo.Name;
-
-            // if the project name doesn't exist in dict, appends it as a new ProjectStats object
-            if (!projectStats.ContainsKey(projectName))
-            {
-                projectStats[projectName] = new ProjectStats();
-            }
-
-            // increments the number of pushes for that project
-            projectStats[projectName].ProjectPushes++;
-        }
-    }
+    totalPushes = game.CountPushes(pushData);  
 }
 
 
 if (wakaFetchSuccess)
 {
-    WakaTimeData wakaTimeResponse = wakaTimeData;
-    float totalTimeWorked = wakaTimeResponse.Data[0].GrandTotal.TotalSeconds;
-    hoursWorked = totalTimeWorked / 3600;
-
-    for (int i =0; i < wakaTimeResponse.Data[0].Projects.Count; i++)
-    {
-        string projectName = wakaTimeResponse.Data[0].Projects[i].Name;
-        float projectTimeWorked = wakaTimeResponse.Data[0].Projects[i].TotalSeconds / 3600;
-
-        if (!projectStats.ContainsKey(projectName))
-        {
-            projectStats[projectName] = new ProjectStats();
-        }
-
-        projectStats[projectName].ProjectHours = projectTimeWorked;
-    }
+    hoursWorked = game.GetHoursWorked(wakaTimeData);
 }
 
 for (int i = 0; i < dailyQuests.Count; i++)
