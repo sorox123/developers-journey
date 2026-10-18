@@ -14,11 +14,7 @@ public class SaveService
             {
                 string json = File.ReadAllText("quests.json");
                 SaveData save = JsonSerializer.Deserialize<SaveData>(json);
-                if (save.DailyQuests == null)
-                {
-                    save.DailyQuests = LoadDailyQuestFromDefinitions();
-                }
-                return save;
+                return UpgradeSave(save);
             }
             catch (Exception ex)
             {
@@ -79,5 +75,19 @@ public class SaveService
         {
             throw new FileNotFoundException("Fatal error: could not load daily quest definitions");
         }
+    }
+    private SaveData UpgradeSave(SaveData save)
+    {
+        if (save.Version == 0)
+        {
+            if (save.DailyQuests == null)
+            {
+                save.DailyQuests = LoadDailyQuestFromDefinitions();
+            }
+
+            save.Version = 1;
+        }
+
+        return save;
     }
 }
