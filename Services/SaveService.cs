@@ -5,7 +5,7 @@ namespace DevelopersJourney.Services;
 
 public class SaveService
 {
-
+    public const int CurrentVersion = 1;
     public SaveData LoadGame()
     {
         if (File.Exists("quests.json"))
@@ -35,6 +35,7 @@ public class SaveService
     public void SaveGame(List<Quest> quests, int totalXP, List<DailyQuest> dailyQuests, DateTime lastDailyReset)
     {
         SaveData saveOut = new SaveData();
+        saveOut.Version = CurrentVersion;
         saveOut.LastDailyReset = lastDailyReset;
         saveOut.DailyQuests = dailyQuests;
         saveOut.Quests = quests;
@@ -56,6 +57,7 @@ public class SaveService
             questsList.TotalXP = 0;
             questsList.DailyQuests = LoadDailyQuestFromDefinitions();
             questsList.LastDailyReset = DateTime.Today.AddHours(2);
+            questsList.Version = CurrentVersion;
             return questsList;
         }
         catch

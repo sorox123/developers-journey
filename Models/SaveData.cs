@@ -6,4 +6,5 @@ public class SaveData
     public List<DailyQuest> DailyQuests { get; set; }
     public int TotalXP { get; set; }
     public DateTime LastDailyReset { get; set; }
+    public int Version { get; set; }
 }
