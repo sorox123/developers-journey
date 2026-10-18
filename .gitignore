@@ -486,3 +486,9 @@ secrets.json
 
 # Quests go here:
 quests.json
+
+# Backups here:
+quests.backup.json
+
+# Broken saves here:
+quests.broken.json

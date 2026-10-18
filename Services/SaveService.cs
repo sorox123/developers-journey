@@ -18,8 +18,8 @@ public class SaveService
             }
             catch (Exception ex)
             {
-                return LoadFromDefinitions();
-                
+                File.Copy("quests.json", "quests.broken.json", overwrite: true);
+                throw new Exception($"Save file is broken: {ex.Message}. Copied to quests.broken.json");
             }
         }
         else
@@ -38,6 +38,12 @@ public class SaveService
         saveOut.TotalXP = totalXP;
 
         string data = JsonSerializer.Serialize(saveOut);
+        if (File.Exists("quests.json"))
+        {
+            //copies quests.json as-is, pastes in new file quests.backup.json
+            //overwrite: true, meaning to replace last time's backup
+            File.Copy("quests.json", "quests.backup.json", overwrite: true);
+        }
         File.WriteAllText("quests.json", data);
     }
 
