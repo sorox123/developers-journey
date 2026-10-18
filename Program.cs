@@ -53,11 +53,6 @@ catch (Exception ex)
 
 game.CheckForReset();
 
-List<Quest> quests = game.Quests;
-int totalXP = game.TotalXP;
-List<DailyQuest> dailyQuests = game.DailyQuests;
-DateTime lastDailyReset = game.LastDailyReset;
-
 int totalPushes = 0;
 
 float hoursWorked = 0;
@@ -73,28 +68,26 @@ if (wakaFetchSuccess)
     hoursWorked = game.GetHoursWorked(wakaTimeData);
 }
 
-for (int i = 0; i < dailyQuests.Count; i++)
+for (int i = 0; i < game.DailyQuests.Count; i++)
 {
-    if (!dailyQuests[i].IsComplete) // checks to see if daily hasn't already been completed
+    if (!game.DailyQuests[i].IsComplete) // checks to see if daily hasn't already been completed
     {
-        if (dailyQuests[i].Title == "Make 2 pushes to GitHub")
+        if (game.DailyQuests[i].Title == "Make 2 pushes to GitHub")
         {
-            dailyQuests[i].Progress = totalPushes;
-            if (dailyQuests[i].Progress >= dailyQuests[i].Goal)
+            game.DailyQuests[i].Progress = totalPushes;
+            if (game.DailyQuests[i].Progress >= game.DailyQuests[i].Goal)
             {
-                int dailyXP = dailyQuests[i].Complete();
-                Console.WriteLine(dailyQuests[i].Title + " completed! +" + dailyXP + " XP");
-                totalXP = totalXP + dailyXP;
+                int dailyXP = game.CompleteDaily(game.DailyQuests[i]);
+                Console.WriteLine(game.DailyQuests[i].Title + " completed! +" + dailyXP + " XP");
             }
         }
-        if (dailyQuests[i].Title == "Actively code in VSCode for 5 hours")
+        if (game.DailyQuests[i].Title == "Actively code in VSCode for 5 hours")
         {
-            dailyQuests[i].Progress = (int)hoursWorked;
-            if (dailyQuests[i].Progress >= dailyQuests[i].Goal)
+            game.DailyQuests[i].Progress = (int)hoursWorked;
+            if (game.DailyQuests[i].Progress >= game.DailyQuests[i].Goal)
             {
-                int dailyXP = dailyQuests[i].Complete();
-                Console.WriteLine(dailyQuests[i].Title + " completed! +" + dailyXP + " XP");
-                totalXP = totalXP + dailyXP;
+                int dailyXP = game.CompleteDaily(game.DailyQuests[i]);
+                Console.WriteLine(game.DailyQuests[i].Title + " completed! +" + dailyXP + " XP");
             }
         }
     }
@@ -107,23 +100,23 @@ while (keepPlaying)
     Console.WriteLine("Filter by tag (or press enter to see all):");
     string filterTag = Console.ReadLine();
 
-    for (int i = 0; i < quests.Count; i++)
+    for (int i = 0; i < game.Quests.Count; i++)
     {
-        if (filterTag != "" && !quests[i].SkillTags.Contains(filterTag)) // skip if user hits enter. if filter was typed and this quest doesn't have that tag
+        if (filterTag != "" && !game.Quests[i].SkillTags.Contains(filterTag)) // skip if user hits enter. if filter was typed and this quest doesn't have that tag
         {
             continue; // skip rest of loop iteration
         }
 
-        string tags = string.Join(", ", quests[i].SkillTags);
-        Console.WriteLine((i + 1) + ". " + quests[i].Title + " - Complete: " + quests[i].IsComplete + " [" + tags + "]");
+        string tags = string.Join(", ", game.Quests[i].SkillTags);
+        Console.WriteLine((i + 1) + ". " + game.Quests[i].Title + " - Complete: " + game.Quests[i].IsComplete + " [" + tags + "]");
     }
 
     Console.WriteLine("Daily Quests:");
 
     //Iterate through dailyQuests and print them AFTER regular quests
-    for (int i = 0; i < dailyQuests.Count; i++)
+    for (int i = 0; i < game.DailyQuests.Count; i++)
     {
-        Console.WriteLine((i + 1) + ". " + dailyQuests[i].Title + " - Progress: " + dailyQuests[i].Progress + "/" + dailyQuests[i].Goal);
+        Console.WriteLine((i + 1) + ". " + game.DailyQuests[i].Title + " - Progress: " + game.DailyQuests[i].Progress + "/" + game.DailyQuests[i].Goal);
     }
 
     Console.WriteLine("Which quest number did you complete?");
@@ -141,7 +134,7 @@ while (keepPlaying)
         if (input.StartsWith("daily"))
         {
             int chosenDaily = int.Parse(input.Substring(6));
-            DailyQuest dailyProgression = dailyQuests[chosenDaily - 1];
+            DailyQuest dailyProgression = game.DailyQuests[chosenDaily - 1];
 
             //checks to make sure the daily isn't already complete.
             if (dailyProgression.IsComplete == true)
@@ -154,9 +147,8 @@ while (keepPlaying)
 
             if (dailyProgression.Progress >= dailyProgression.Goal)
             {
-                int dailyXP = dailyProgression.Complete();
+                int dailyXP = game.CompleteDaily(dailyProgression);
                 Console.WriteLine(dailyProgression.Title + " completed! +" + dailyXP + " XP");
-                totalXP = totalXP + dailyXP;
             }
             
             Console.WriteLine(dailyProgression.Title + " progress: " + dailyProgression.Progress + " / " + dailyProgression.Goal);
@@ -164,16 +156,15 @@ while (keepPlaying)
         else
         {
             int chosenNumber = int.Parse(input);
-            Quest chosenQuest = quests[chosenNumber - 1];
+            Quest chosenQuest = game.Quests[chosenNumber - 1];
             if (chosenQuest.IsComplete)
             {
                 Console.WriteLine("Quest is already completed.");
                 continue;
             }
-            int earnedXP = chosenQuest.Complete();
+            int earnedXP = game.CompleteQuest(chosenQuest);
             Console.WriteLine(chosenQuest.Title + " completed! +" + earnedXP + " XP");
-            totalXP = totalXP + earnedXP;
-            Console.WriteLine("Total XP: " + totalXP);
+            Console.WriteLine("Total XP: " + game.TotalXP);
         }
     }
     catch
@@ -189,7 +180,7 @@ while (keepPlaying)
 
 try
 {
-    storage.SaveGame(quests, totalXP, dailyQuests, lastDailyReset);
+    storage.SaveGame(game.Quests, game.TotalXP, game.DailyQuests, game.LastDailyReset);
     Console.WriteLine("Game saved successfully.");
 }
 catch (Exception ex)

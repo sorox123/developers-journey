@@ -85,4 +85,18 @@ public class GameState
         }
         return hoursWorked;
     }
+
+    public int CompleteQuest(Quest quest) //shows xp gained from quest completion an adds it to totalxp
+    {
+        int xp = quest.Complete();
+        TotalXP += xp;
+        return xp;
+    }
+
+    public int CompleteDaily(DailyQuest daily) //shows xp gained from daily quest completion and adds it to totalxp
+    {
+        int xp = daily.Complete();
+        TotalXP += xp;
+        return xp;
+    }
 }
