@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/DevelopersJourney.Console/">
+    <Project Path="DevelopersJourney.Console/DevJourney.csproj" />
+  </Folder>
+</Solution>
