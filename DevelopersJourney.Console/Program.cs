@@ -1,7 +1,8 @@
 ﻿using DevelopersJourney.Models;
 using DevelopersJourney.Services;
 
-var storage = new SaveService();
+string dataFolder = "../Data";
+var storage = new SaveService(dataFolder); //pulls SaveService files from Data and keeps it as storage var
 ApiService apiService;
 SaveData saveData;
 bool githubFetchSuccess = false;
@@ -21,7 +22,7 @@ var game = new GameState(saveData);
 
 try //checks for secrets and creates an ApiService object if there is one, returns error if not
 {
-    apiService = new ApiService();
+    apiService = new ApiService(dataFolder); //pulls ApiService files from /Data as apiService
 }
 catch (Exception ex)
 {

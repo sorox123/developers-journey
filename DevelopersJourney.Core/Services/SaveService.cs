@@ -6,19 +6,30 @@ namespace DevelopersJourney.Services;
 public class SaveService
 {
     public const int CurrentVersion = 1;
+
+    private string dataFolder; //folder for each method in this class
+
+    //contructor: recieves the folder path once, stors is in the dataFolder field
+    public SaveService(string folder)
+    {
+        dataFolder = folder;
+    }
     public SaveData LoadGame()
     {
-        if (File.Exists("quests.json"))
+        string savePath = Path.Combine(dataFolder, "quests.json");
+        string brokenPath = Path.Combine(dataFolder, "quests.broken.json");
+
+        if (File.Exists(savePath))
         {
             try
             {
-                string json = File.ReadAllText("quests.json");
+                string json = File.ReadAllText(savePath);
                 SaveData save = JsonSerializer.Deserialize<SaveData>(json);
                 return UpgradeSave(save);
             }
             catch (Exception ex)
             {
-                File.Copy("quests.json", "quests.broken.json", overwrite: true);
+                File.Copy(savePath, brokenPath, overwrite: true);
                 throw new Exception($"Save file is broken: {ex.Message}. Copied to quests.broken.json");
             }
         }
@@ -38,20 +49,26 @@ public class SaveService
         saveOut.TotalXP = totalXP;
 
         string data = JsonSerializer.Serialize(saveOut);
-        if (File.Exists("quests.json"))
+
+        string savePath = Path.Combine(dataFolder, "quests.json");
+        string backupPath = Path.Combine(dataFolder, "quests.backup.json");
+
+        if (File.Exists(savePath))
         {
             //copies quests.json as-is, pastes in new file quests.backup.json
             //overwrite: true, meaning to replace last time's backup
-            File.Copy("quests.json", "quests.backup.json", overwrite: true);
+            File.Copy(savePath, backupPath, overwrite: true);
         }
-        File.WriteAllText("quests.json", data);
+        File.WriteAllText(savePath, data);
     }
 
     public SaveData LoadFromDefinitions()
     {
         try
         {
-            string questDefinitions = File.ReadAllText("questdefinitions.json");
+            string questDef = Path.Combine(dataFolder, "questdefinitions.json");
+
+            string questDefinitions = File.ReadAllText(questDef);
             List<Quest> quests = JsonSerializer.Deserialize<List<Quest>>(questDefinitions);
 
             SaveData questsList = new SaveData();
@@ -72,7 +89,9 @@ public class SaveService
     {
         try
         {
-            string dailyQuestDefinitions = File.ReadAllText("dailyquestdefinitions.json");
+            string dQuestDef = Path.Combine(dataFolder, "dailyquestdefinitions.json");
+
+            string dailyQuestDefinitions = File.ReadAllText(dQuestDef);
             List<DailyQuest> dailyQuests = JsonSerializer.Deserialize<List<DailyQuest>>(dailyQuestDefinitions);
 
             return dailyQuests;

@@ -11,14 +11,19 @@ public class ApiService
     private HttpClient client;
     private Secrets secrets;
 
+    private string dataFolder; 
+
     //Construct fields
-    public ApiService()
+    public ApiService(string folder)
     {
+        dataFolder = folder; //creates dataFolder
+        string secret = Path.Combine(dataFolder, "secrets.json");
+
         //creates a new HttpClient object with a User-Agent header
         client = new HttpClient();
         client.DefaultRequestHeaders.Add("User-Agent", "DevelopersJourney");
         //creates a new Secrets object with content from secrets.json
-        string json = File.ReadAllText("secrets.json");
+        string json = File.ReadAllText(secret);
         secrets = JsonSerializer.Deserialize<Secrets>(json);
     }
 
