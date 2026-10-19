@@ -2,4 +2,5 @@
   <Folder Name="/DevelopersJourney.Console/">
     <Project Path="DevelopersJourney.Console/DevJourney.csproj" />
   </Folder>
+  <Project Path="DevelopersJourney.Web/DevelopersJourney.Web.csproj" />
 </Solution>
