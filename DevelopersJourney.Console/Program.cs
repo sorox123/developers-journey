@@ -144,15 +144,16 @@ while (keepPlaying)
                 continue;
             }
 
-            dailyProgression.Progress++;
-
-            if (dailyProgression.Progress >= dailyProgression.Goal)
-            {
-                int dailyXP = game.CompleteDaily(dailyProgression);
-                Console.WriteLine(dailyProgression.Title + " completed! +" + dailyXP + " XP");
-            }
+            int dailyXP = game.AddDailyProgress(dailyProgression);
             
-            Console.WriteLine(dailyProgression.Title + " progress: " + dailyProgression.Progress + " / " + dailyProgression.Goal);
+            if (dailyXP > 0 )
+            {
+                Console.WriteLine($"{dailyProgression.Title} completed! +{dailyXP}XP");
+            }
+            else
+            {
+                Console.WriteLine(dailyProgression.Title + " progress: " + dailyProgression.Progress + " / " + dailyProgression.Goal);
+            }
         }
         else
         {

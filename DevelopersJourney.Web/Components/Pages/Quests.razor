@@ -45,6 +45,18 @@
     }
 </ul>
 
+<h2>Daily Quests</h2>
+
+<ul>
+    @foreach (DailyQuest dailyQuest in Game.DailyQuests)
+    {
+        <li>
+            @dailyQuest.Title
+            @dailyQuest.Progress / @dailyQuest.Goal
+        </li>
+    }
+</ul>
+
 @code {
     //@code converts code within {} to C#
     string filter = ""; //filter starts empty until filled by the user

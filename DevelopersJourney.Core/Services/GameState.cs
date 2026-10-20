@@ -1,3 +1,4 @@
+using System.Net;
 using DevelopersJourney.Models;
 
 namespace DevelopersJourney.Services;
@@ -98,5 +99,22 @@ public class GameState
         int xp = daily.Complete();
         TotalXP += xp;
         return xp;
+    }
+
+    public int AddDailyProgress(DailyQuest daily)
+    {
+        if (daily.IsComplete) //if daily is complete, return 0, can't gain xp for already completed quests, exits if statement
+        {
+            return 0;
+        }
+
+        daily.Progress++; //increment daily's progress by 1
+
+        if (daily.Progress >= daily.Goal) //if this completes the daily, reward xp and mark as complete
+        {
+            return CompleteDaily(daily);
+        }
+        return 0; //if incrementing the daily's progress by 1 doesn't complete it, exit the method with 0 xp
+
     }
 }

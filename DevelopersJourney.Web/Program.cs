@@ -14,6 +14,8 @@ SaveService storage = new SaveService(dataFolder);
 SaveData saveData = storage.LoadGame();
 GameState game = new GameState(saveData);
 
+game.CheckForReset(); //checks for reset for Gamestate object game
+
 builder.Services.AddSingleton(storage);
 builder.Services.AddSingleton(game);
 
