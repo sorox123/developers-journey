@@ -39,14 +39,14 @@ public class SaveService
         }
     }
 
-    public void SaveGame(List<Quest> quests, int totalXP, List<DailyQuest> dailyQuests, DateTime lastDailyReset)
+    public void SaveGame(GameState game)
     {
         SaveData saveOut = new SaveData();
         saveOut.Version = CurrentVersion;
-        saveOut.LastDailyReset = lastDailyReset;
-        saveOut.DailyQuests = dailyQuests;
-        saveOut.Quests = quests;
-        saveOut.TotalXP = totalXP;
+        saveOut.LastDailyReset = game.LastDailyReset;
+        saveOut.DailyQuests = game.DailyQuests;
+        saveOut.Quests = game.Quests;
+        saveOut.TotalXP = game.TotalXP;
 
         string data = JsonSerializer.Serialize(saveOut);
 

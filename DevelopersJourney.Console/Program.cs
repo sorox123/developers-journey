@@ -181,7 +181,7 @@ while (keepPlaying)
 
 try
 {
-    storage.SaveGame(game.Quests, game.TotalXP, game.DailyQuests, game.LastDailyReset);
+    storage.SaveGame(game);
     Console.WriteLine("Game saved successfully.");
 }
 catch (Exception ex)

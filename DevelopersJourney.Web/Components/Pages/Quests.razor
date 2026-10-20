@@ -10,6 +10,8 @@
 
 @* injects GameState object named Game *@
 @inject GameState Game
+@* injects SaveService object name storage *@
+@inject SaveService Storage
 
 <input @bind="filter" @bind:event="oninput" /> @* oninput = update on every keystroke *@
 <p>Filtering by: @filter</p>
@@ -32,12 +34,24 @@
             {
                 <span>⭐</span>
             }
+            else
+            {
+                @* when quests are not complete, add button to click complete quests. *@
+                <button @onclick="() => CompleteQuestClicked(quest)">Complete</button>        
+            }
 
             </li>
         }
     }
 </ul>
 
-@code { //@code converts code within {} to C#
+@code {
+    //@code converts code within {} to C#
     string filter = ""; //filter starts empty until filled by the user
+
+    void CompleteQuestClicked(Quest quest)
+    {
+        Game.CompleteQuest(quest);
+        Storage.SaveGame(Game);
+    }
 }
