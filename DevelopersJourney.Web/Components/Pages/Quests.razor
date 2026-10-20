@@ -17,7 +17,8 @@
 <ul>
     @foreach (Quest quest in Game.Quests) @* for each Quest object quest in Game's Quest property, list items *@
     {
-        @if (filter == "" || quest.SkillTags.Contains(filter, StringComparer.OrdinalIgnoreCase)) @* checks to see if filter contains matching tags with/without matching case *@
+        @* checks to see if filter contains matching tags with/without matching case, whatever matches "so far", includes quest names themselves *@
+        @if (filter == "" || quest.Title.Contains(filter, StringComparison.OrdinalIgnoreCase) || quest.SkillTags.Any(questTag => questTag.Contains(filter, StringComparison.OrdinalIgnoreCase)))
         {
                 <li>@quest.Title
 
