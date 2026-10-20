@@ -1,3 +1,5 @@
+using DevelopersJourney.Models;
+using DevelopersJourney.Services;
 using DevelopersJourney.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -5,6 +7,15 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+string dataFolder = "../Data";
+
+//create shared game objects
+SaveService storage = new SaveService(dataFolder);
+SaveData saveData = storage.LoadGame();
+GameState game = new GameState(saveData);
+
+builder.Services.AddSingleton(storage);
+builder.Services.AddSingleton(game);
 
 var app = builder.Build();
 
