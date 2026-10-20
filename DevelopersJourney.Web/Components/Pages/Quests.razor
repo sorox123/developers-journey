@@ -1,0 +1,42 @@
+@* link named by what I want to display here (shows in browser as /quests tailer) *@
+@page "/quests"
+
+@* allows page to react to typing/clicks *@
+@rendermode InteractiveServer
+
+<PageTitle>Quests</PageTitle> @* browser tab text *@
+
+<h1>Quests</h1> @* text on the page *@
+
+@* injects GameState object named Game *@
+@inject GameState Game
+
+<input @bind="filter" @bind:event="oninput" /> @* oninput = update on every keystroke *@
+<p>Filtering by: @filter</p>
+
+<ul>
+    @foreach (Quest quest in Game.Quests) @* for each Quest object quest in Game's Quest property, list items *@
+    {
+        @if (filter == "" || quest.SkillTags.Contains(filter, StringComparer.OrdinalIgnoreCase)) @* checks to see if filter contains matching tags with/without matching case *@
+        {
+                <li>@quest.Title
+
+            @* loop through SkillTags list *@
+            @foreach (string questTag in quest.SkillTags)
+            {
+                <span>[@questTag]</span> @* each tag in brackets. Pills will come later *@
+            }
+
+            @if (quest.IsComplete)
+            {
+                <span>⭐</span>
+            }
+
+            </li>
+        }
+    }
+</ul>
+
+@code { //@code converts code within {} to C#
+    string filter = ""; //filter starts empty until filled by the user
+}
