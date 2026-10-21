@@ -5,7 +5,8 @@
         "XP": 25,
         "SkillTags": ["C#", "Version Control"],
         "Progress": 0,
-        "Goal": 2
+        "Goal": 2,
+        "Source": "GitHubPushes"
     },
     {
         "Title": "Actively code in VSCode for 5 hours",
@@ -13,6 +14,7 @@
         "XP": 25,
         "SkillTags": ["C#", "Python", "C++", "JavaScript", "Coding"],
         "Progress": 0,
-        "Goal": 5
+        "Goal": 5,
+        "Source": "CodingHours"
     }
 ]

@@ -5,7 +5,7 @@ namespace DevelopersJourney.Services;
 
 public class SaveService
 {
-    public const int CurrentVersion = 1;
+    public const int CurrentVersion = 2;
 
     private string dataFolder; //folder for each method in this class
 
@@ -103,6 +103,7 @@ public class SaveService
     }
     private SaveData UpgradeSave(SaveData save)
     {
+        //if statements for each version to show what changes for each version in case things break in between versions
         if (save.Version == 0)
         {
             if (save.DailyQuests == null)
@@ -111,6 +112,23 @@ public class SaveService
             }
 
             save.Version = 1;
+        }
+
+        if (save.Version == 1)
+        {
+            foreach (DailyQuest daily in save.DailyQuests)
+            {
+                if (daily.Title == "Make 2 pushes to GitHub")
+                {
+                    daily.Source = ProgressSource.GitHubPushes;
+                }
+                else if (daily.Title == "Actively code in VSCode for 5 hours")
+                {
+                    daily.Source = ProgressSource.CodingHours;
+                }
+            }
+            
+            save.Version = 2;
         }
 
         return save;
