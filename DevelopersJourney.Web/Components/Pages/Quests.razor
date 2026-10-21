@@ -1,5 +1,6 @@
 @* link named by what I want to display here (shows in browser as /quests tailer) *@
 @page "/quests"
+@using Microsoft.AspNetCore.Identity.Data
 
 @* allows page to react to typing/clicks *@
 @rendermode InteractiveServer
@@ -46,6 +47,9 @@
 </ul>
 
 <h2>Daily Quests</h2>
+@{TimeSpan resetCountDown = Game.TimeUntilReset();} @* This sits outside @code because this runs every time the page draws *@
+<p>Resets in: @resetCountDown.Hours h @resetCountDown.Minutes m</p>
+
 
 <ul>
     @foreach (DailyQuest dailyQuest in Game.DailyQuests)
@@ -53,6 +57,7 @@
         <li>
             @dailyQuest.Title
             @dailyQuest.Progress / @dailyQuest.Goal
+            @* placeholder progression bar, eventually replace with custom bar where progression text is IN the bar *@
             <progress value="@dailyQuest.Progress" max="@dailyQuest.Goal"> </progress>
 
             @if (dailyQuest.IsComplete)

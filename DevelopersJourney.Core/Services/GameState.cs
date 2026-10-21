@@ -117,4 +117,10 @@ public class GameState
         return 0; //if incrementing the daily's progress by 1 doesn't complete it, exit the method with 0 xp
 
     }
+
+    public TimeSpan TimeUntilReset()
+    {
+        DateTime nextReset = LastDailyReset.AddDays(1);
+        return nextReset - DateTime.Now;
+    }
 }
