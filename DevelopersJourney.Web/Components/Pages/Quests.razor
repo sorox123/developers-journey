@@ -63,9 +63,9 @@
             {
                 <span>⭐</span>
             }
-            else
+            else if (dailyQuest.Source == ProgressSource.Manual)
             {
-                @* for now, dailies require clicking the button until complete *@
+                @* Dailies require clicking the button until complete *@
                 <button @onclick="() => ProgressDailyClicked(dailyQuest)">+1 Progress</button>
             }
         </li>
