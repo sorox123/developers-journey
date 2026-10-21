@@ -123,4 +123,14 @@ public class GameState
         DateTime nextReset = LastDailyReset.AddDays(1);
         return nextReset - DateTime.Now;
     }
+
+    public void AddQuest(Quest quest)
+    {
+        Quests.Add(quest);
+    }
+
+    public void DeleteQuest(Quest quest)
+    {
+        Quests.Remove(quest);
+    }
 }

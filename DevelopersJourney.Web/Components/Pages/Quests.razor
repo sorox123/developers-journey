@@ -16,13 +16,20 @@
 <input @bind="filter" @bind:event="oninput" /> @* oninput = update on every keystroke *@
 <p>Filtering by: @filter</p>
 
+<h3>Add Quest</h3>
+<input @bind="newTitle" placeholder="Title" />
+<input type="number" @bind="newXP" />
+<input @bind="newTags" placeholder="Tags, comma separated" />
+<button @onclick="AddQuestClicked">Add</button> @* note: no () => because method takes no params *@
+<p>@errorMessage</p>
+
 <ul>
     @foreach (Quest quest in Game.Quests) @* for each Quest object quest in Game's Quest property, list items *@
     {
         @* checks to see if filter contains matching tags with/without matching case, whatever matches "so far", includes quest names themselves *@
         @if (filter == "" || quest.Title.Contains(filter, StringComparison.OrdinalIgnoreCase) || quest.SkillTags.Any(questTag => questTag.Contains(filter, StringComparison.OrdinalIgnoreCase)))
         {
-                <li>@quest.Title
+             <li>@quest.Title
 
             @* loop through SkillTags list *@
             @foreach (string questTag in quest.SkillTags)
@@ -38,6 +45,17 @@
             {
                 @* when quests are not complete, add button to click complete quests. *@
                 <button @onclick="() => CompleteQuestClicked(quest)">Complete</button>        
+            }
+
+            @if (quest == questToDelete)
+            {
+                <span>Confirm?</span>
+                <button @onclick="() => ConfirmDelete(quest)">Yes</button>
+                <button @onclick="CancelDelete">No</button>
+            }
+            else
+            {
+                <button @onclick="() => DeleteClicked(quest)">Delete</button>
             }
 
             </li>
@@ -75,6 +93,11 @@
 @code {
     //@code converts code within {} to C#
     string filter = ""; //filter starts empty until filled by the user
+    string newTitle = ""; //field title for newly added quests
+    int newXP = 0; //type="number" @bind converts to int, starts at 0, field for xp in new quest
+    string newTags =""; //field for tags for newly added quests
+    string errorMessage = ""; //error to be returned when stopping bad quest creation
+    Quest? questToDelete = null; //null until the delete button is pressed for in-progress quests
 
     void CompleteQuestClicked(Quest quest)
     {
@@ -86,5 +109,60 @@
     {
         Game.AddDailyProgress(daily);
         Storage.SaveGame(Game);
+    }
+
+    void AddQuestClicked()
+    {
+        if (string.IsNullOrWhiteSpace(newTitle)) //IsNullOrWhiteSpace checks for whitespace or null strings
+        {
+            errorMessage = "Quests must have a title!";
+            return;
+        }
+
+        if (newXP <= 0)
+        {
+            errorMessage = "Quests should reward your hard work with XP.";
+            return;
+        }
+
+        errorMessage = "";
+
+        Quest newQuest = new Quest //initializes newQuest with properties taken from fields filled by user
+        {
+            Title = newTitle,
+            XP = newXP,
+            //splits tags into array items by , and trims whitespace and removes empty entries. | Allows both StringSplitOptions to happen while .ToList turns it into a list of strings
+            SkillTags = newTags.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList() 
+        };
+
+        Game.AddQuest(newQuest);
+        Storage.SaveGame(Game);
+        newTitle = "";
+        newXP = 0;
+        newTags = "";
+    }
+
+    void DeleteClicked(Quest quest)
+    {
+        if (!quest.IsComplete)
+        {
+            questToDelete = quest;
+            return;
+        }
+
+        Game.DeleteQuest(quest);
+        Storage.SaveGame(Game);
+    }
+
+    void ConfirmDelete(Quest quest)
+    {
+        Game.DeleteQuest(quest);
+        questToDelete = null;
+        Storage.SaveGame(Game);
+    }
+
+    void CancelDelete()
+    {
+        questToDelete = null;
     }
 }
