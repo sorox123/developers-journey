@@ -53,6 +53,17 @@
         <li>
             @dailyQuest.Title
             @dailyQuest.Progress / @dailyQuest.Goal
+            <progress value="@dailyQuest.Progress" max="@dailyQuest.Goal"> </progress>
+
+            @if (dailyQuest.IsComplete)
+            {
+                <span>⭐</span>
+            }
+            else
+            {
+                @* for now, dailies require clicking the button until complete *@
+                <button @onclick="() => ProgressDailyClicked(dailyQuest)">+1 Progress</button>
+            }
         </li>
     }
 </ul>
@@ -64,6 +75,12 @@
     void CompleteQuestClicked(Quest quest)
     {
         Game.CompleteQuest(quest);
+        Storage.SaveGame(Game);
+    }
+
+    void ProgressDailyClicked(DailyQuest daily)
+    {
+        Game.AddDailyProgress(daily);
         Storage.SaveGame(Game);
     }
 }
