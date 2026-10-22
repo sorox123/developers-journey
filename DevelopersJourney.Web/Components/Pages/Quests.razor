@@ -61,17 +61,19 @@ else
                 <button @onclick="() => EditClicked(quest)">Edit</button>       
             }
 
-            @if (quest == questToDelete)
+            @if (quest != questToEdit)
             {
-                <span>Confirm?</span>
-                <button @onclick="() => ConfirmDelete(quest)">Yes</button>
-                <button @onclick="CancelDelete">No</button>
+                @if (quest == questToDelete)
+                {
+                    <span>Confirm?</span>
+                    <button @onclick="() => ConfirmDelete(quest)">Yes</button>
+                    <button @onclick="CancelDelete">No</button>
+                }
+                else
+                {
+                    <button @onclick="() => DeleteClicked(quest)">Delete</button>   
+                }
             }
-            else
-            {
-                <button @onclick="() => DeleteClicked(quest)">Delete</button>
-            }
-
             </li>
         }
     }
@@ -161,6 +163,11 @@ else
 
     void DeleteClicked(Quest quest)
     {
+        if (quest == questToEdit)
+        {
+            errorMessage = "Please close the quest editor before deleting.";
+        }
+
         if (!quest.IsComplete)
         {
             questToDelete = quest;
