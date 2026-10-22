@@ -52,8 +52,11 @@ else
             }
             else
             {
-                @* when quests are not complete, add button to click complete quests. *@
-                <button @onclick="() => CompleteQuestClicked(quest)">Complete</button> 
+                @if (quest != questToEdit)
+                {
+                    @* when quests are not complete, add button to click complete quests. *@
+                    <button @onclick="() => CompleteQuestClicked(quest)">Complete</button> 
+                }
 
                 <button @onclick="() => EditClicked(quest)">Edit</button>       
             }
@@ -183,6 +186,13 @@ else
     void SaveEditClicked()
     {
         if (questToEdit == null) return; //shouldn't happen but Quest? needs this to ignore the compiler warning
+
+        if (questToEdit.IsComplete)
+        {
+            CancelEditClicked();
+            errorMessage = "Completed quests can't be edited.";
+            return;
+        }
 
         if (string.IsNullOrWhiteSpace(newTitle)) //IsNullOrWhiteSpace checks for whitespace or null strings
         {
