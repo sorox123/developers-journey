@@ -20,7 +20,16 @@
 <input @bind="newTitle" placeholder="Title" />
 <input type="number" @bind="newXP" />
 <input @bind="newTags" placeholder="Tags, comma separated" />
-<button @onclick="AddQuestClicked">Add</button> @* note: no () => because method takes no params *@
+@if (questToEdit == null)
+{
+    <button @onclick="AddQuestClicked">Add</button> @* note: no () => because method takes no params *@
+}
+else
+{
+    //if editing add these buttons instead of the Add button
+    <button @onclick="SaveEditClicked">Save</button>
+    <button @onclick="CancelEditClicked">Cancel</button>
+}
 <p>@errorMessage</p>
 
 <ul>
@@ -44,7 +53,9 @@
             else
             {
                 @* when quests are not complete, add button to click complete quests. *@
-                <button @onclick="() => CompleteQuestClicked(quest)">Complete</button>        
+                <button @onclick="() => CompleteQuestClicked(quest)">Complete</button> 
+
+                <button @onclick="() => EditClicked(quest)">Edit</button>       
             }
 
             @if (quest == questToDelete)
@@ -97,7 +108,10 @@
     int newXP = 0; //type="number" @bind converts to int, starts at 0, field for xp in new quest
     string newTags =""; //field for tags for newly added quests
     string errorMessage = ""; //error to be returned when stopping bad quest creation
+
     Quest? questToDelete = null; //null until the delete button is pressed for in-progress quests
+    Quest? questToEdit = null;
+
 
     void CompleteQuestClicked(Quest quest)
     {
@@ -152,6 +166,56 @@
 
         Game.DeleteQuest(quest);
         Storage.SaveGame(Game);
+    }
+
+    void EditClicked(Quest quest)
+    {
+        //copy quest's title into the form's title variable;
+        newTitle = quest.Title;
+
+        newXP = quest.XP;
+
+        newTags = string.Join(", ", quest.SkillTags);
+
+        questToEdit = quest;
+    }
+
+    void SaveEditClicked()
+    {
+        if (questToEdit == null) return; //shouldn't happen but Quest? needs this to ignore the compiler warning
+
+        if (string.IsNullOrWhiteSpace(newTitle)) //IsNullOrWhiteSpace checks for whitespace or null strings
+        {
+            errorMessage = "Quests must have a title!";
+            return;
+        }
+
+        if (newXP <= 0)
+        {
+            errorMessage = "Quests should reward your hard work with XP.";
+            return;
+        }
+
+        errorMessage = "";
+
+        questToEdit.Title = newTitle;
+        questToEdit.XP = newXP;
+        questToEdit.SkillTags = newTags.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList();
+
+        Storage.SaveGame(Game);
+
+        CancelEditClicked();
+    }
+
+    void CancelEditClicked() //clear fields and stop editing
+    {
+        newTitle = "";
+        newXP = 0;
+        newTags = "";
+        errorMessage = "";
+
+        //stop editing
+        questToEdit = null;
     }
 
     void ConfirmDelete(Quest quest)
