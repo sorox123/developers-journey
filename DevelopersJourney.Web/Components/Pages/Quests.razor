@@ -18,6 +18,17 @@
 
 <h3>Add Quest</h3>
 <input @bind="newTitle" placeholder="Title" />
+<input @bind="newDescription" placeholder="Quest Objectives/Flavortext" />
+<select @bind="newDifficulty">
+        @foreach (Difficulty level in Enum.GetValues<Difficulty>()) @* for each value (level) in Difficulty enum*@
+            {
+                <option value="@level">@level</option> @* one drop down item per enum value *@
+            }
+</select>
+<label>
+    <input type="checkbox" @bind="newIsMainQuest"/>
+    Mark as Main Quest?
+</label>
 <input type="number" @bind="newXP" />
 <input @bind="newTags" placeholder="Tags, comma separated" />
 @if (questToEdit == null)
@@ -111,6 +122,9 @@ else
     string newTitle = ""; //field title for newly added quests
     int newXP = 0; //type="number" @bind converts to int, starts at 0, field for xp in new quest
     string newTags =""; //field for tags for newly added quests
+    string newDescription = ""; //field for description the player types
+    Difficulty newDifficulty = Difficulty.Beginner; //selection box for selecting difficulty
+    bool newIsMainQuest = false;
     string errorMessage = ""; //error to be returned when stopping bad quest creation
 
     Quest? questToDelete = null; //null until the delete button is pressed for in-progress quests
@@ -150,14 +164,15 @@ else
             Title = newTitle,
             XP = newXP,
             //splits tags into array items by , and trims whitespace and removes empty entries. | Allows both StringSplitOptions to happen while .ToList turns it into a list of strings
-            SkillTags = newTags.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList() 
+            SkillTags = newTags.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList(),
+            Difficulty = newDifficulty,
+            Description = newDescription,
+            IsMainQuest = newIsMainQuest
         };
 
         Game.AddQuest(newQuest);
         Storage.SaveGame(Game);
-        newTitle = "";
-        newXP = 0;
-        newTags = "";
+        CancelEditClicked();
     }
 
     void DeleteClicked(Quest quest)
@@ -180,13 +195,25 @@ else
 
     void EditClicked(Quest quest)
     {
-        //copy quest's title into the form's title variable;
+        //copy quest's title into the form's title field
         newTitle = quest.Title;
 
+        //copy quest cp into the form's xp field
         newXP = quest.XP;
 
+        //copy quest tags into the form's tags field
         newTags = string.Join(", ", quest.SkillTags);
 
+        //copies the quest description into the form's description field
+        newDescription = quest.Description;
+
+        //copies the quest difficulty into the form's slect drop box
+        newDifficulty = quest.Difficulty;
+
+        //copies the IsMainQuest status from the quest into the form's IsMainQuest checkbox
+        newIsMainQuest = quest.IsMainQuest;
+
+        //selects current quest as the one being edited to prevent overwriting other quests by accident
         questToEdit = quest;
     }
 
@@ -218,6 +245,9 @@ else
         questToEdit.Title = newTitle;
         questToEdit.XP = newXP;
         questToEdit.SkillTags = newTags.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList();
+        questToEdit.Description = newDescription;
+        questToEdit.Difficulty = newDifficulty;
+        questToEdit.IsMainQuest = newIsMainQuest;
 
         Storage.SaveGame(Game);
 
@@ -229,6 +259,9 @@ else
         newTitle = "";
         newXP = 0;
         newTags = "";
+        newDescription = "";
+        newDifficulty = Difficulty.Beginner;
+        newIsMainQuest = false;
         errorMessage = "";
 
         //stop editing

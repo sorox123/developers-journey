@@ -1,11 +1,12 @@
 using DevelopersJourney.Models;
+using System.Net;
 using System.Text.Json;
 
 namespace DevelopersJourney.Services;
 
 public class SaveService
 {
-    public const int CurrentVersion = 2;
+    public const int CurrentVersion = 3;
 
     private string dataFolder; //folder for each method in this class
 
@@ -129,6 +130,17 @@ public class SaveService
             }
             
             save.Version = 2;
+        }
+
+        if (save.Version == 2)
+        {
+            foreach (Quest quest in save.Quests)
+            {
+                quest.Description = "";
+                quest.Difficulty = Difficulty.Beginner;
+                quest.IsMainQuest = false;
+            }
+            save.Version = 3;
         }
 
         return save;

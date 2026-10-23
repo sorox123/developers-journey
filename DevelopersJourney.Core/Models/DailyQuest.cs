@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace DevelopersJourney.Models;
 
-public class DailyQuest : Quest
+public class DailyQuest : QuestBase
 {
     public int Progress { get; set; } // progress "how many pushes to github today"
     public int Goal { get; set; } // goal "out of this many pushes to github"

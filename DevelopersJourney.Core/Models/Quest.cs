@@ -1,15 +1,13 @@
+using System.Text.Json.Serialization;
+
 namespace DevelopersJourney.Models;
 
-public class Quest
+public class Quest : QuestBase
 {
-    public string Title { get; set; }
-    public bool IsComplete { get; set; }
-    public int XP { get; set; }
-    public List<string> SkillTags { get; set; }
+    public string Description { get; set; }
+    public bool IsMainQuest { get; set; }
 
-    public int Complete()
-    {
-        IsComplete = true;
-        return XP;
-    }
+    //converts Difficulty enums to string, sets nulled values to Beginner
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public Difficulty Difficulty { get; set; } = Difficulty.Beginner;
 }
