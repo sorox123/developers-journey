@@ -56,9 +56,8 @@ else
                 {
                     @* when quests are not complete, add button to click complete quests. *@
                     <button @onclick="() => CompleteQuestClicked(quest)">Complete</button> 
-                }
-
-                <button @onclick="() => EditClicked(quest)">Edit</button>       
+                    <button @onclick="() => EditClicked(quest)">Edit</button> 
+                }      
             }
 
             @if (quest != questToEdit)
@@ -166,6 +165,7 @@ else
         if (quest == questToEdit)
         {
             errorMessage = "Please close the quest editor before deleting.";
+            return;
         }
 
         if (!quest.IsComplete)
