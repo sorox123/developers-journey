@@ -91,6 +91,7 @@ public class GameState
     {
         int xp = quest.Complete();
         TotalXP += xp;
+        quest.IsMainQuest = false;
         return xp;
     }
 

@@ -157,6 +157,13 @@ else
             return;
         }
 
+        if (newIsMainQuest && Game.Quests.Count(q => q.IsMainQuest) >= 3)
+        {
+            newIsMainQuest = false;
+            errorMessage = "You can only have 3 main quests at a time.";
+            return;
+        }
+
         errorMessage = "";
 
         Quest newQuest = new Quest //initializes newQuest with properties taken from fields filled by user
@@ -209,7 +216,7 @@ else
 
         //copies the quest difficulty into the form's slect drop box
         newDifficulty = quest.Difficulty;
-
+        
         //copies the IsMainQuest status from the quest into the form's IsMainQuest checkbox
         newIsMainQuest = quest.IsMainQuest;
 
@@ -237,6 +244,13 @@ else
         if (newXP <= 0)
         {
             errorMessage = "Quests should reward your hard work with XP.";
+            return;
+        }
+
+        if (newIsMainQuest && !questToEdit.IsMainQuest && Game.Quests.Count(q => q.IsMainQuest) >= 3)
+        {
+            newIsMainQuest = false;
+            errorMessage = "You can only have 3 main quests at a time.";
             return;
         }
 
