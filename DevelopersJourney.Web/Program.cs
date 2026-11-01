@@ -13,11 +13,13 @@ string dataFolder = "../Data";
 SaveService storage = new SaveService(dataFolder);
 SaveData saveData = storage.LoadGame();
 GameState game = new GameState(saveData);
+ApiService apiService = new ApiService(dataFolder);
 
 game.CheckForReset(); //checks for reset for Gamestate object game
 
 builder.Services.AddSingleton(storage);
 builder.Services.AddSingleton(game);
+builder.Services.AddSingleton(apiService);
 
 var app = builder.Build();
 

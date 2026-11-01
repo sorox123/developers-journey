@@ -19,16 +19,43 @@ public class ApiService
         dataFolder = folder; //creates dataFolder
         string secret = Path.Combine(dataFolder, "secrets.json");
 
+        if (!File.Exists(secret))
+        {
+            secrets = new Secrets(); //create new empty secrets object if file doesnt exist
+        }
+        else //creates a new Secrets object with content from secrets.json and deserializes it
+        {
+            string json = File.ReadAllText(secret);
+            secrets = JsonSerializer.Deserialize<Secrets>(json);
+        }
+
+
         //creates a new HttpClient object with a User-Agent header
         client = new HttpClient();
         client.DefaultRequestHeaders.Add("User-Agent", "DevelopersJourney");
-        //creates a new Secrets object with content from secrets.json
-        string json = File.ReadAllText(secret);
-        secrets = JsonSerializer.Deserialize<Secrets>(json);
+    }
+
+    public bool IsGitHubLinked()
+    {
+        return !string.IsNullOrWhiteSpace(secrets.GitHubToken) && !string.IsNullOrWhiteSpace(secrets.GitHubUsername);
+    }
+
+    public void SaveSecrets(Secrets newSecrets) //returns nothing
+    {
+        string secretFile = Path.Combine(dataFolder, "secrets.json"); //rebuild file path
+
+        string json = JsonSerializer.Serialize(newSecrets); //serialize newSecrets to json
+        File.WriteAllText(secretFile, json); //write json to dataFolder/secrets.json
+        secrets = newSecrets; //update current secrets object to the new one
     }
 
     public async Task<List<GitHubEvent>> GetGitHubPushes()
     {
+        if (!IsGitHubLinked())
+        {
+            throw new Exception("GitHub is not linked yet. Please add it in the Settings.");
+        }
+
         //local variable for  github url, built every call so it uses current secrets file.
         string url = $"https://api.github.com/users/{secrets.GitHubUsername}/events";
 
@@ -85,5 +112,16 @@ public class ApiService
         }
 
         return wakaData;
+    }
+
+    public void LinkGitHub(string username, string token)
+    {
+        Secrets newSecrets = new Secrets
+        {
+            GitHubUsername = username,
+            GitHubToken = token,
+            WakaTimeToken = secrets.WakaTimeToken
+        };
+        SaveSecrets(newSecrets);
     }
 }

@@ -1,0 +1,48 @@
+
+@*url shows localhost:xxxx/settings*@
+@page "/settings" 
+@* allows typeing and clicks to work *@
+@rendermode InteractiveServer 
+
+<PageTitle>Settings</PageTitle>
+<h1>Settings</h1>
+
+@* inject ApiService *@
+@inject ApiService Api
+
+@if (Api.IsGitHubLinked())
+{
+    <p>GitHub: Linked</p>
+}
+else
+{
+    <p>GitHub: Not Linked</p>
+}
+
+<input @bind="gitHubUsername" placeholder="GitHub Username"/>
+<input type="password" @bind="gitHubToken" placeholder="GitHub Token"/> @* password type makes input appear as **** *@
+<button @onclick="SaveClicked">Save</button>
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <p style="color:red;">@errorMessage</p>
+}
+
+@code {
+    private string gitHubUsername = "";
+    private string gitHubToken = "";
+    private string errorMessage = "";
+
+    private void SaveClicked()
+    {
+        if (string.IsNullOrWhiteSpace(gitHubUsername) || string.IsNullOrWhiteSpace(gitHubToken))
+        {
+
+            errorMessage = "GitHub Username and Token are required.";
+            return;
+        }
+        Api.LinkGitHub(gitHubUsername, gitHubToken);
+        gitHubUsername = "";
+        gitHubToken = "";
+        errorMessage = "";
+    }
+}
