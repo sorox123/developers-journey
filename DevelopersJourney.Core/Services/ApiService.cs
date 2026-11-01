@@ -11,7 +11,7 @@ public class ApiService
     private HttpClient client;
     private Secrets secrets;
 
-    private string dataFolder; 
+    private string dataFolder;
 
     //Construct fields
     public ApiService(string folder)
@@ -29,7 +29,10 @@ public class ApiService
 
     public async Task<List<GitHubEvent>> GetGitHubPushes()
     {
-        var gitRequest = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/users/sorox123/events"); //new request for github info
+        //local variable for  github url, built every call so it uses current secrets file.
+        string url = $"https://api.github.com/users/{secrets.GitHubUsername}/events";
+
+        var gitRequest = new HttpRequestMessage(HttpMethod.Get, url); //new request for github info
         gitRequest.Headers.Add("Authorization", "Bearer " + secrets.GitHubToken); //params required; authorization, bearer + token
         HttpResponseMessage gitResponse = await client.SendAsync(gitRequest); //await respons from github
         //if the response was not successful, throw an exception with clear message (include the status code)
