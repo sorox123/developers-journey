@@ -12,6 +12,8 @@
 @inject GameState Game
 @* injects SaveService object name storage *@
 @inject SaveService Storage
+@* injects ApiService object named Api *@
+@inject ApiService Api
 
 <input @bind="filter" @bind:event="oninput" /> @* oninput = update on every keystroke *@
 <p>Filtering by: @filter</p>
@@ -116,6 +118,22 @@ else
     }
 </ul>
 
+<h3>Add Daily Quest</h3>
+<input @bind="newDailyTitle" placeholder="Daily Quest Title" />
+<input type="number" @bind="newDailyXP" />
+<input type="number" @bind="newDailyGoal"/>
+<select @bind="newDailySource">
+        @foreach (ProgressSource source in Enum.GetValues<ProgressSource>())
+            {
+                @if(source != ProgressSource.GitHubPushes || Api.IsGitHubLinked())
+                {
+                    <option value="@source">@source</option>
+                }
+            }
+</select>
+<button @onclick="AddDailyClicked">Add Daily</button>
+<p>@dailyErrorMessage</p>
+
 @code {
     //@code converts code within {} to C#
     string filter = ""; //filter starts empty until filled by the user
@@ -130,6 +148,25 @@ else
     Quest? questToDelete = null; //null until the delete button is pressed for in-progress quests
     Quest? questToEdit = null;
 
+    string newDailyTitle = ""; //field for adding new daily quests
+    int newDailyGoal = 0; //field to set the goal for the new daily quests
+    int newDailyXP = 0; //field to set the XP reqward for new daily quests
+    ProgressSource newDailySource = ProgressSource.Manual; //enum for the source of the new daily. defaults at Manual
+    string dailyErrorMessage = ""; //error message for daily quests
+
+    //returns error message string or "" if everything passes
+    string ValidateBasics(string title, int xp)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return "Quests must have a title.";
+        }
+        if (xp <= 0)
+        {
+            return "Quests should reward XP for your hard work.";
+        }
+        return ""; //if passes both guards, good to go!
+    }
 
     void CompleteQuestClicked(Quest quest)
     {
@@ -143,20 +180,34 @@ else
         Storage.SaveGame(Game);
     }
 
+    void AddDailyClicked()
+    {
+        dailyErrorMessage = ValidateBasics(newDailyTitle, newDailyXP);
+        if (dailyErrorMessage != "")
+        {
+            return;
+        }
+
+        if (newDailyGoal <= 0)
+        {
+            dailyErrorMessage = "Daily quests should have a goal greater than 0.";
+            return;
+        }
+
+        DailyQuest newDaily = new DailyQuest
+        {
+            Title = newDailyTitle,
+            Goal = newDailyGoal,
+            XP = newDailyXP,
+            Source = newDailySource
+        };
+
+        Game.AddDaily(newDaily);
+        Storage.SaveGame(Game);
+        ClearDailyForm();
+    }
     void AddQuestClicked()
     {
-        if (string.IsNullOrWhiteSpace(newTitle)) //IsNullOrWhiteSpace checks for whitespace or null strings
-        {
-            errorMessage = "Quests must have a title!";
-            return;
-        }
-
-        if (newXP <= 0)
-        {
-            errorMessage = "Quests should reward your hard work with XP.";
-            return;
-        }
-
         if (newIsMainQuest && Game.Quests.Count(q => q.IsMainQuest) >= 3)
         {
             newIsMainQuest = false;
@@ -164,7 +215,11 @@ else
             return;
         }
 
-        errorMessage = "";
+        errorMessage = ValidateBasics(newTitle, newXP);
+        if (errorMessage != "") //if the error message is not empty/if there is an error, return
+        {
+            return;
+        }
 
         Quest newQuest = new Quest //initializes newQuest with properties taken from fields filled by user
         {
@@ -180,6 +235,15 @@ else
         Game.AddQuest(newQuest);
         Storage.SaveGame(Game);
         CancelEditClicked();
+    }
+
+    void ClearDailyForm()
+    {
+        newDailyTitle = "";
+        newDailyGoal = 0;
+        newDailyXP = 0;
+        newDailySource = ProgressSource.Manual;
+        dailyErrorMessage = "";
     }
 
     void DeleteClicked(Quest quest)
@@ -235,18 +299,6 @@ else
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(newTitle)) //IsNullOrWhiteSpace checks for whitespace or null strings
-        {
-            errorMessage = "Quests must have a title!";
-            return;
-        }
-
-        if (newXP <= 0)
-        {
-            errorMessage = "Quests should reward your hard work with XP.";
-            return;
-        }
-
         if (newIsMainQuest && !questToEdit.IsMainQuest && Game.Quests.Count(q => q.IsMainQuest) >= 3)
         {
             newIsMainQuest = false;
@@ -254,7 +306,11 @@ else
             return;
         }
 
-        errorMessage = "";
+        errorMessage = ValidateBasics(newTitle, newXP);
+        if (errorMessage != "")
+        {
+            return;
+        }
 
         questToEdit.Title = newTitle;
         questToEdit.XP = newXP;
@@ -293,4 +349,6 @@ else
     {
         questToDelete = null;
     }
+
+
 }

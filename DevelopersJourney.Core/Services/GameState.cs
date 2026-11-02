@@ -130,6 +130,11 @@ public class GameState
         Quests.Add(quest);
     }
 
+    public void AddDaily(DailyQuest daily)
+    {
+        DailyQuests.Add(daily);
+    }
+
     public void DeleteQuest(Quest quest)
     {
         Quests.Remove(quest);
