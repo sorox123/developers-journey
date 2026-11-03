@@ -139,4 +139,9 @@ public class GameState
     {
         Quests.Remove(quest);
     }
+
+    public void DeleteDaily(DailyQuest daily)
+    {
+        DailyQuests.Remove(daily);
+    }
 }

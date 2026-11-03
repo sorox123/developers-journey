@@ -114,6 +114,17 @@ else
                 @* Dailies require clicking the button until complete *@
                 <button @onclick="() => ProgressDailyClicked(dailyQuest)">+1 Progress</button>
             }
+
+            @if (dailyQuest == dailyToDelete)
+            {
+                <span>Confirm?</span>
+                <button @onclick="() => ConfirmDeleteDaily(dailyQuest)">Yes</button>
+                <button @onclick="CancelDeleteDaily">No</button>
+            }
+            else
+            {
+                <button @onclick="() => DeleteDailyClicked(dailyQuest)">Delete</button>
+            }
         </li>
     }
 </ul>
@@ -153,6 +164,8 @@ else
     int newDailyXP = 0; //field to set the XP reqward for new daily quests
     ProgressSource newDailySource = ProgressSource.Manual; //enum for the source of the new daily. defaults at Manual
     string dailyErrorMessage = ""; //error message for daily quests
+
+    DailyQuest? dailyToDelete = null; //null until the delete button is pressed for the daily quest
 
     //returns error message string or "" if everything passes
     string ValidateBasics(string title, int xp)
@@ -264,6 +277,18 @@ else
         Storage.SaveGame(Game);
     }
 
+    void DeleteDailyClicked(DailyQuest daily)
+    {
+        if (!daily.IsComplete)
+        {
+            dailyToDelete = daily;
+            return;
+        }
+
+        Game.DeleteDaily(daily);
+        Storage.SaveGame(Game);
+    }
+
     void EditClicked(Quest quest)
     {
         //copy quest's title into the form's title field
@@ -280,7 +305,7 @@ else
 
         //copies the quest difficulty into the form's slect drop box
         newDifficulty = quest.Difficulty;
-        
+
         //copies the IsMainQuest status from the quest into the form's IsMainQuest checkbox
         newIsMainQuest = quest.IsMainQuest;
 
@@ -343,6 +368,18 @@ else
         Game.DeleteQuest(quest);
         questToDelete = null;
         Storage.SaveGame(Game);
+    }
+
+    void ConfirmDeleteDaily(DailyQuest daily)
+    {
+        Game.DeleteDaily(daily);
+        dailyToDelete = null;
+        Storage.SaveGame(Game);
+    }
+
+    void CancelDeleteDaily()
+    {
+        dailyToDelete = null;
     }
 
     void CancelDelete()
