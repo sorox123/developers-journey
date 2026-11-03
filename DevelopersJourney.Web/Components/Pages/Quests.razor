@@ -95,7 +95,6 @@ else
 @{TimeSpan resetCountDown = Game.TimeUntilReset();} @* This sits outside @code because this runs every time the page draws *@
 <p>Resets in: @resetCountDown.Hours h @resetCountDown.Minutes m</p>
 
-
 <ul>
     @foreach (DailyQuest dailyQuest in Game.DailyQuests)
     {
@@ -109,21 +108,29 @@ else
             {
                 <span>⭐</span>
             }
-            else if (dailyQuest.Source == ProgressSource.Manual)
+            else if (dailyQuest != dailyToEdit)
             {
-                @* Dailies require clicking the button until complete *@
-                <button @onclick="() => ProgressDailyClicked(dailyQuest)">+1 Progress</button>
+                @if (dailyQuest.Source == ProgressSource.Manual)
+                {
+                    @* Dailies require clicking the button until complete *@
+                    <button @onclick="() => ProgressDailyClicked(dailyQuest)">+1 Progress</button>
+                }
+
+                <button @onclick="() => EditDailyClicked(dailyQuest)">Edit</button>
             }
 
-            @if (dailyQuest == dailyToDelete)
+            @if (dailyQuest != dailyToEdit)
             {
-                <span>Confirm?</span>
-                <button @onclick="() => ConfirmDeleteDaily(dailyQuest)">Yes</button>
-                <button @onclick="CancelDeleteDaily">No</button>
-            }
-            else
-            {
-                <button @onclick="() => DeleteDailyClicked(dailyQuest)">Delete</button>
+                @if (dailyQuest == dailyToDelete)
+                {
+                    <span>Confirm?</span>
+                    <button @onclick="() => ConfirmDeleteDaily(dailyQuest)">Yes</button>
+                    <button @onclick="CancelDeleteDaily">No</button>
+                }
+                else
+                {
+                    <button @onclick="() => DeleteDailyClicked(dailyQuest)">Delete</button>
+                }
             }
         </li>
     }
@@ -133,7 +140,8 @@ else
 <input @bind="newDailyTitle" placeholder="Daily Quest Title" />
 <input type="number" @bind="newDailyXP" />
 <input type="number" @bind="newDailyGoal"/>
-<select @bind="newDailySource">
+@* disabled = grayed out dropdown =@(...) Blazor fills with bool, true = greyed out fales = disabled is off completely*@
+<select @bind="newDailySource" disabled="@(dailyToEdit != null)">
         @foreach (ProgressSource source in Enum.GetValues<ProgressSource>())
             {
                 @if(source != ProgressSource.GitHubPushes || Api.IsGitHubLinked())
@@ -142,7 +150,15 @@ else
                 }
             }
 </select>
-<button @onclick="AddDailyClicked">Add Daily</button>
+@if (dailyToEdit == null)
+{
+    <button @onclick="AddDailyClicked">Add Daily Quest</button>
+}
+else
+{
+    <button @onclick="SaveEditDailyClicked">Save</button>
+    <button @onclick="CancelEditDailyClicked">Cancel</button>
+}
 <p>@dailyErrorMessage</p>
 
 @code {
@@ -166,6 +182,7 @@ else
     string dailyErrorMessage = ""; //error message for daily quests
 
     DailyQuest? dailyToDelete = null; //null until the delete button is pressed for the daily quest
+    DailyQuest? dailyToEdit = null; //null until the edit button is pressed for the daily quest
 
     //returns error message string or "" if everything passes
     string ValidateBasics(string title, int xp)
@@ -313,6 +330,15 @@ else
         questToEdit = quest;
     }
 
+    void EditDailyClicked(DailyQuest daily)
+    {
+        newDailyTitle = daily.Title;
+        newDailyGoal = daily.Goal;
+        newDailyXP = daily.XP;
+        newDailySource = daily.Source;
+        dailyToEdit = daily;
+    }
+
     void SaveEditClicked()
     {
         if (questToEdit == null) return; //shouldn't happen but Quest? needs this to ignore the compiler warning
@@ -349,6 +375,42 @@ else
         CancelEditClicked();
     }
 
+    void SaveEditDailyClicked()
+    {
+        if (dailyToEdit == null) return; //shouldn't happen but DailyQuest? needs this to ignore the compiler warning
+
+        if(dailyToEdit.IsComplete)
+        {
+            CancelEditDailyClicked();
+            dailyErrorMessage = "Completed daily quests can't be edited.";
+            return;
+        }
+
+        dailyErrorMessage = ValidateBasics(newDailyTitle, newDailyXP);
+        if (dailyErrorMessage != "")
+        {
+            return;
+        }
+
+        if (newDailyGoal <= 0) //checks to see if the new goal is greater than 0
+        {
+            dailyErrorMessage = "Daily quests must have a goal greater than 0.";
+            return;
+        }
+
+        if (newDailyGoal < dailyToEdit.Progress) //checks to make sure the new set goal isn't already met/exceeded
+        {
+            dailyErrorMessage = "Daily quest goal cannot be less than today's progress.";
+            return;
+        }
+
+        dailyToEdit.Title = newDailyTitle;
+        dailyToEdit.XP = newDailyXP;
+        dailyToEdit.Goal = newDailyGoal;
+        Storage.SaveGame(Game);
+        CancelEditDailyClicked();
+    }
+
     void CancelEditClicked() //clear fields and stop editing
     {
         newTitle = "";
@@ -361,6 +423,12 @@ else
 
         //stop editing
         questToEdit = null;
+    }
+
+    void CancelEditDailyClicked()
+    {
+        ClearDailyForm();
+        dailyToEdit = null;
     }
 
     void ConfirmDelete(Quest quest)
